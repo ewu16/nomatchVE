@@ -1,54 +1,54 @@
-#get_marginalizing_distributions
-
 #' Estimate the marginalizing distribution in the observed or matched analysis-eligible
 #' populations.
 #'
+#' @description
+#' `get_observed_gp` returns marginalizing distributions  based on the original observed data
+#' `get_matching_gp` returns marginalizing distributions based on the matched-analysis data
+#'
 #' @inheritParams obsve
-#' @param matched_adata Needed when marginalizing_dist_type = "matched". This is
-#' a data frame representing the matched analysis-eligible population
-#' @param marginalizing_dist_type Character string describing the type of estimated
-#'   day/covariate distributions to marginalize over: `"observed"` or "`matched`"
-#' @return A list of two data frames containing the marginalizing distributions
+#' @return A list of two data frames containing the marginalizing distributions returned from calls to [get_gp()]
 #' @export
 #'
-get_marginalizing_distributions <- function(data, outcome_name, trt_name,
-                                            time_name, adjust_vars, tau,
-                                            marginalizing_dist_type,
-                                            matched_adata = NULL){
+get_observed_gp <- function(data, outcome_name, trt_name,
+                                            time_name, adjust_vars, tau){
 
-    stopifnot("not a valid marginalizing_dist_type" =
-                  marginalizing_dist_type %in% c("observed", "matched"))
-
-
-    if(marginalizing_dist_type == "observed"){
-        gp_list <-  get_gp(data, outcome_name, trt_name, time_name, adjust_vars, tau)
-
-    }else if(marginalizing_dist_type == "matched" & !is.null(matched_adata)){
-        stopifnot("must provide matched adata" = !is.null(matched_adata))
-
-        gp_list <- get_gp(df = matched_adata,
-                          outcome_name = paste0(outcome_name, "_matched"),
-                          trt_name = paste0(trt_name, "_d"),
-                          time_name = "d",
-                          adjust_vars = adjust_vars,
-                          tau = tau)
-        #rename d variable to original time_name
-        names(gp_list$g_dist)[which(names(gp_list$g_dist ) == "d")] <- time_name
-    }
-
-    return(gp_list)
-
+    get_gp(data, outcome_name, trt_name, time_name, adjust_vars, tau)
 
 }
 
+#' @rdname get_observed_gp
+#' @param matched_adata For `get_matching_gp`, a data frame representing the matched analysis-eligible population
+get_matching_gp <- function(matched_adata, outcome_name, trt_name,
+                                         time_name, adjust_vars, tau){
+    gp_list <- get_gp(df = matched_adata,
+                      outcome_name = paste0(outcome_name, "_matched"),
+                      trt_name = paste0(trt_name, "_d"),
+                      time_name = "d",
+                      adjust_vars = adjust_vars,
+                      tau = tau)
+    #rename d variable to original time_name
+    names(gp_list$g_dist)[which(names(gp_list$g_dist ) == "d")] <- time_name
+    gp_list
+}
 
-#' Get empirical probability distributions g(d|x) and P(x) based on input data
+
+#' Get empirical probability distributions g(d|x) and p(x) based on input data
 #'
 #' @inheritParams  obsve
 #' @param df A data frame representing the target population for the estimated distributions
 #' * typically, population involves the "analysis-eligible" subset of a given data source
 #'
-#' @return A list of two data frames containing the estimated probabilities
+#' @return A list of the following:
+#' \describe{
+#' \item{g_dist}{A data frame containing the covariate-conditional day probabilities.
+#' Columns include `group_name` identifying the covariate group, `<time_name> specifying the day,
+#' `prob` specifying the covariate-conditional day probability, and each variables in `adjust_vars`}
+#' \item{p_dist}{A data frame containing the covariate probabilities.
+#' Columns include `group_name` identifying the covariate group,`prob` specifying the covariate probability, and
+#' each variable in `adjust_vars`}
+#' }
+#'
+#'
 #' @export
 #'
 get_gp <- function(df, outcome_name, trt_name, time_name, adjust_vars, tau){
