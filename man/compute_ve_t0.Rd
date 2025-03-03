@@ -26,7 +26,7 @@ will be used for prediction}
 }
 \value{
 A named numeric vector containing point estimates for
-\verb{psi_bar_0, psi_bar_1}, and \code{ve}
+\verb{risk_0, risk_1}, and \code{ve}
 }
 \description{
 Compute proposed causal VE estimand given the fitted survival models at a single

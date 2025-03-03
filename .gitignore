@@ -5,5 +5,5 @@
 .DS_Store
 .quarto
 inst/doc
-
+check_code/
 docs

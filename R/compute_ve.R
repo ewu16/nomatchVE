@@ -8,7 +8,7 @@
 #' @inheritParams compute_psi_d
 #' @inheritParams obsve
 #'
-#' @return A matrix of estimates where the columns are the terms `psi_bar_0, psi_bar_1`, and `ve`
+#' @return A matrix of estimates where the columns are the terms `risk_0, risk_1`, and `ve`
 #' and the rows are the time points of interest.
 #' @export
 #'
@@ -29,7 +29,7 @@ compute_ve <- function(fit_0, fit_1, time_name, times, tau, gp_list){
 #' @inheritParams obsve
 #'
 #' @return A named numeric vector containing point estimates for
-#'  `psi_bar_0, psi_bar_1`, and `ve`
+#'  `risk_0, risk_1`, and `ve`
 #'
 compute_ve_t0 <- function(fit_0, fit_1, time_name, t0, tau, gp_list){
 
@@ -45,20 +45,20 @@ compute_ve_t0 <- function(fit_0, fit_1, time_name, t0, tau, gp_list){
     add_ve(psi_bar)
 }
 
-#' Calculate VE based on psi_bar_0 and psi_bar_1
+#' Calculate VE based on risk_0 and risk_1
 #'
 #' This function computes VE as the proportion reduction in risk due to
-#' vaccination (ie. VE = 1 - psi_bar_0 / psi_bar_1)
+#' vaccination (ie. VE = 1 - risk_0 / risk_1)
 #'
 #' @param psi_bar {A named numeric vector containing point estimates for
-#'  `psi_bar_0, psi_bar_1`}
+#'  `risk_0, risk_1`}
 #'
 #' @return {A named numeric vector containing point estimates for
-#'  `psi_bar_0, psi_bar_1`, and `ve`}
+#'  `risk_0, risk_1`, and `ve`}
 #' @export
 #'
 add_ve <- function(psi_bar){
 
-    ve <- unname(1 - psi_bar["psi_bar_1"]/psi_bar["psi_bar_0"])
+    ve <- unname(1 - psi_bar["risk_1"]/psi_bar["risk_0"])
     c(psi_bar, "ve" = ve)
 }

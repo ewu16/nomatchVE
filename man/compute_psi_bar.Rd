@@ -15,7 +15,7 @@ contain the columns \verb{risk_0, risk_1} representing psi_0(t0; d, x) and psi_1
 }
 \value{
 {A named numeric vector containing point estimates for
-\verb{psi_bar_0, psi_bar_1}}
+\verb{risk_0, risk_1}}
 }
 \description{
 This function marginalizes psi_v(t0; d, x) over estimated or pre-specified

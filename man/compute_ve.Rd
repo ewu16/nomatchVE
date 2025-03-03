@@ -26,7 +26,7 @@ immunity}
 will be used for prediction}
 }
 \value{
-A matrix of estimates where the columns are the terms \verb{psi_bar_0, psi_bar_1}, and \code{ve}
+A matrix of estimates where the columns are the terms \verb{risk_0, risk_1}, and \code{ve}
 and the rows are the time points of interest.
 }
 \description{

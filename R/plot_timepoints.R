@@ -1,41 +1,31 @@
-#' Convert list of estimates to dataframe with t0 as column
-#'
-#' @param object Object created by timepoints
-#'
-#' @return Data frame with estimates across all time points
-#' @export
-#'
-timepoints_to_df <- function(object){
-  estimates_list <- lapply(seq_along(object$estimates), \(i){
-    estimates_df <- estimates_to_df(object$estimates[[i]])
-    estimates_df$t0 <- names(object$estimates)[i]
-    estimates_df
-  })
-  do.call("rbind", estimates_list)
-}
-
-
 #' Plot cumulative incidence/VE estimates
 #'
-#' @param object Object created by timepoints
+#' @param plot_data A dataframe
+#' @param ci_type String indicating type of confidence interval to plot.
+#' Takes values of  "wald", "percentile" or "simul".
 #'
 #' @return ggplot
 #' @export
-plot_timepoints <- function(object){
-  #TODO:specify what confidence interval types to plot
-  df <- timepoints_to_df(object)
-  df |>
-    ggplot2::ggplot(aes(x = t0, y = estimate,group = 1)) +
+plot_ve_panel <- function(plot_data, ci_type){
+  lower <- paste0(ci_type, "_lower")
+  upper <- paste0(ci_type, "_upper")
+
+  plot_data$term_label <- factor(plot_data$term, c("risk_0", "risk_1", "ve"),
+                                 c("Cumulative incidence: no vaccine",
+                                   "Cumulative incidence: vaccine",
+                                   "VE"))
+
+
+  plot_data |>
+    ggplot2::ggplot(ggplot2::aes(x = t0, y = estimate,group = 1)) +
     ggplot2::geom_line() +
-    ggplot2::geom_ribbon(ggplot2::aes(ymin = wald_lower, ymax = wald_upper),
-                alpha = 0.15, linewidth = 0, show.legend = FALSE) +
-    ggplot2::facet_wrap(~term, scales = "free") +
+    ggplot2::geom_ribbon(ggplot2::aes(ymin = .data[[lower]], ymax = .data[[upper]]),
+                alpha = 0.5, linewidth = 0, show.legend = FALSE) +
+    ggplot2::facet_wrap(~term_label, scales = "free") +
     ggplot2::scale_y_continuous(labels = scales::label_percent()) +
-    ggplot2::labs(x = "Time since vaccination (t)", y = "",
-         color = "Method:") +
+    ggplot2::labs(x = "Time since vaccination", y = "Estimate") +
     ggplot2:: theme_bw() +
     ggplot2::theme(plot.subtitle = ggplot2::element_text(hjust = 0.5),
                    strip.background = ggplot2::element_rect(fill = "white",color = "white"),
-                   strip.text = ggplot2::element_text(size = 12))
-
+                   strip.text = ggplot2::element_text(size = 10))
 }

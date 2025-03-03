@@ -40,7 +40,7 @@ devtools::install_github("ewu16/obsve")
 This minimal example shows how to use `obsve` to obtain cumulative incidence
 and vaccine effectiveness estimates in a simple simulated data set. 
 
-```{r example}
+```{r example, fig.width = 8, fig.height = 4}
 library(obsve)
 # Set seed for reproducibility 
 set.seed(1234)
@@ -58,8 +58,8 @@ trt_name <- "V"
 time_name <- "D_obs"
 adjust_vars <- c("x1", "x2")
 
-t0 <- 90
-censor_time <- 90
+times <- seq(30, 180, by = 30)
+censor_time <- max(times)
 tau <- 14
 ci_type <- "wald"
 limit_type <- "fixed"
@@ -67,9 +67,7 @@ n_boot <- 10
 alpha <- .05
 
 # ------------------------------------------------------------------------------
-# 2. Compute VE estimand at t0 
-
-## 2a. Use observed distribution of vaccination dates/covariates
+# 2. Compute VE estimand at time points 
 
 fit1 <- obsve(data = simdata,
               outcome_name = outcome_name,
@@ -78,22 +76,35 @@ fit1 <- obsve(data = simdata,
               time_name = time_name, 
               adjust_vars = adjust_vars,
               marginalizing_dist = "observed",
-              t0 = t0,
+              times = times,
               censor_time = censor_time, 
               tau = tau,
               ci_type = ci_type,
               limit_type =  limit_type,
               n_boot = n_boot, 
               alpha = alpha)
-              
              
 fit1$estimates
 
+#Compute simultaneous CI
+simul_ci <- simultaneous_ci(fit1, alpha, seed = 1234)
+simul_ci$estimates
+
+#Make nice dataframes of results
+estimates_df <- estimates_to_df(fit1$estimates)
+simul_df <- estimates_to_df(simul_ci$estimates)
+result_df <- merge(estimates_df, simul_df, all.x = TRUE, sort = FALSE)
+head(result_df)
+
+#Plot simultaneous confidence bands 
+plot_ve_panel(result_df, ci_type = "simul") 
+ 
 
 
-## 2b. Use distribution of vaccination dates/covariates from matched data set 
 
-### Create matched dataset to pass as additional argument to `obsve()`
+# ------------------------------------------------------------------------------
+# 3. Compare results with matching estimator
+
 id_name <- "ID"
 matching_vars <- adjust_vars
 
@@ -108,6 +119,41 @@ matched_cohort <- match_rolling_cohort(data = simdata,
 
 matched_data <- matched_cohort[[1]]
 
+
+fit_matching <-matching_ve(matched_data = matched_data,
+                           outcome_name = outcome_name,
+                           event_name = event_name,
+                           trt_name = trt_name,
+                           time_name = time_name,
+                           method = "cox",
+                           adjust = adjust_vars,
+                           times = times,
+                           censor_time = censor_time,
+                           tau = tau,
+                           pair_censoring = TRUE,
+                           separate = TRUE,
+                           ci_type = ci_type,
+                           limit_type = limit_type,
+                           data = simdata,
+                           id_name = id_name,
+                           matching_vars = matching_vars,
+                           replace = FALSE, 
+                           n_boot = n_boot,
+                           alpha = alpha) 
+   
+
+## Proposed and matching based estimators have similar point estimates
+##  Proposed has narrower confidence intervals 
+fit1$estimates
+fit_matching$estimates
+```
+
+
+
+```{r, include = FALSE}
+
+#proposed with matching marginalizing distribution 
+
 fit2 <- obsve(data = simdata,
               outcome_name = outcome_name,
               event_name = event_name,
@@ -117,7 +163,7 @@ fit2 <- obsve(data = simdata,
               marginalizing_dist = "matched",
               matched_dist_options = matched_dist(matched_data = matched_data,
                                                   pair_censoring = TRUE),
-              t0 = t0,
+              times = times,
               censor_time = censor_time, 
               tau = tau,
               ci_type = ci_type,
@@ -131,43 +177,6 @@ fit1$estimates
 
 fit2$estimates
 
-# ------------------------------------------------------------------------------
-# 3. Compute VE at additional timepoints if desired 
 
-times <- c(30, 60, 90)
-results1 <- timepoints(fit1, times = times)
-results1$estimates
-
-results2 <- timepoints(fit2, times = times)
-
-
-# ------------------------------------------------------------------------------
-# 4. Compare results with matching estimator
-
-fit_matching <-matching_ve(matched_data = matched_data,
-                           outcome_name = outcome_name,
-                           event_name = event_name,
-                           trt_name = trt_name,
-                           time_name = time_name,
-                           adjust = adjust_vars,
-                           times = times,
-                           censor_time = censor_time,
-                           tau = tau,
-                           pair_censoring = TRUE,
-                           separate = TRUE,
-                           ci_type = ci_type,
-                           limit_type = limit_type,
-                           data = simdata,
-                           id_name = id_name,
-                           matching_vars = matching_vars,
-                           n_boot = n_boot,
-                           alpha = alpha) 
-   
-
-## Proposed and matching based estimators have similar point estimates
-##  Proposed has narrower confidence intervals 
-results1$estimates
-
-fit_matching$estimates
 ```
 

@@ -2,19 +2,19 @@
 % Please edit documentation in R/compute_ve.R
 \name{add_ve}
 \alias{add_ve}
-\title{Calculate VE based on psi_bar_0 and psi_bar_1}
+\title{Calculate VE based on risk_0 and risk_1}
 \usage{
 add_ve(psi_bar)
 }
 \arguments{
 \item{psi_bar}{{A named numeric vector containing point estimates for
-\verb{psi_bar_0, psi_bar_1}}}
+\verb{risk_0, risk_1}}}
 }
 \value{
 {A named numeric vector containing point estimates for
-\verb{psi_bar_0, psi_bar_1}, and \code{ve}}
+\verb{risk_0, risk_1}, and \code{ve}}
 }
 \description{
 This function computes VE as the proportion reduction in risk due to
-vaccination (ie. VE = 1 - psi_bar_0 / psi_bar_1)
+vaccination (ie. VE = 1 - risk_0 / risk_1)
 }

@@ -8,7 +8,7 @@
 #' #TODO: assumptions on gp_list
 #'
 #' @return {A named numeric vector containing point estimates for
-#'  `psi_bar_0, psi_bar_1`}
+#'  `risk_0, risk_1`}
 #' @export
 #'
 compute_psi_bar <- function(psi_d, gp_list){
@@ -32,10 +32,10 @@ compute_psi_bar <- function(psi_d, gp_list){
    #marginalize over P*(x)
    psi_x <- merge(psi_x, gp_list$p_dist)
 
-   psi_bar_0 <- stats::weighted.mean(psi_x$weighted_risk_0, psi_x$prob)
-   psi_bar_1 <- stats::weighted.mean(psi_x$weighted_risk_1, psi_x$prob)
+   risk_0 <- stats::weighted.mean(psi_x$weighted_risk_0, psi_x$prob)
+   risk_1 <- stats::weighted.mean(psi_x$weighted_risk_1, psi_x$prob)
 
-   c("psi_bar_0" = psi_bar_0, "psi_bar_1" = psi_bar_1)
+   c("risk_0" = risk_0, "risk_1" = risk_1)
 }
 
 

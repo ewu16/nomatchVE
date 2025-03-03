@@ -179,8 +179,8 @@ obsve <- function(data,
      pt_est <- original$estimates
      ci_est <-boot_inference$ci_estimates
      #ci_est <-boot_inference$ci_estimates
-     estimates <- list(psi_bar_0 = cbind(estimate = pt_est[,1], ci_est[[1]]),
-                       psi_bar_1 = cbind(estimate = pt_est[,2], ci_est[[2]]),
+     estimates <- list(risk_0 = cbind(estimate = pt_est[,1], ci_est[[1]]),
+                       risk_1 = cbind(estimate = pt_est[,2], ci_est[[2]]),
                        ve = cbind(estimate = pt_est[,3], ci_est[[3]]))
 
 

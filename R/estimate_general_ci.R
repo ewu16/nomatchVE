@@ -46,15 +46,15 @@ estimate_general_ci <- function(one_boot_function_name,
 
     boot_list <- parallel::mclapply(1:n_boot, \(i){
         set.seed(i) #for debugging
-        print(i)
+        #print(i)
         boot_out <- tryCatch({
-            output <- capture.output(boot_estimates <- do.call(one_boot_function_name, one_boot_args))
+            output <- utils::capture.output(boot_estimates <- do.call(one_boot_function_name, one_boot_args))
             #using c() here to get a wide vector of estimates to make it easier to create the matrices for each term
             result <- c( boot_estimates[, 1],  boot_estimates[, 2],  boot_estimates[, 3])
             list(result = result ,
                  output = output)
         }, error = function(e){
-            list(output = capture.output(print(e)))
+            list(output = utils::capture.output(print(e)))
         })
     }, mc.cores = n_cores)
     names(boot_list) <- seq_along(boot_list)
