@@ -24,11 +24,10 @@
 #'   parameters controlling process of creating matched cohort and matched analysis
 #'   dataset from which marginalizing distributions will be estimated. List
 #'   can be created by [matched_dist()].
-#' @param t0 The time (relative to time of vaccination) at which to return
-#'   cumulative incidence estimates.
+#' @param times A numeric vector containing the times (relative to time of vaccination) at which to return
+#'   the cumulative incidence estimates.
 #' @param censor_time The time at which vaccinated individuals are censored during model fitting.
-#'    If interested in multiple timepoints, recommended to set this to the maximum timepoint of interest
-#'    and then using [timepoints()].
+#'    By default, this is set to `max(times)`.
 #' @param tau The time excluded after vaccination to allow building up of
 #'   immunity
 #' @param formula_0 A formula or pre-fit model for estimating hazards in
@@ -45,16 +44,15 @@
 #'   intervals
 #' @param alpha Significance level used to compute confidence intervals.
 #'   Confidence intervals have nominal level `1 - alpha`.
-#' @param return_models Logical value: Should fitted survival models be returned? Must be set to
-#' `TRUE` If user plans to use [timepoints()] to obtain VE estimates at times other than `t0`
+#' @param return_models Logical value: Should fitted survival models be returned?
 #' @param return_boot Logical value: Should bootstrap estimates be returned?
-#' @param return_data Logical value: Should original data be returned? Must be set to
-#' `TRUE` If user plans to use [timepoints()] to obtain VE estimates at times other than `t0`
+#' @param n_cores Number of cores to use to when running bootstrapping procedure. Passed as `mc.cores` argument to `parallel::mclapply`.
+#' If `n_cores > 1`, this parallelizes the bootstrapping procedure on Unix-like systems (not available on Windows).
 #'
 #' @return A list. In addition to information related to the call/arguments to `obsve`, contains the following:
 #' \describe{
-#'  \item{estimates}{A matrix containing the point estimates and lower and
-#'  upper confidence bounds}
+#'  \item{estimates}{A list of matrices for cumulative incidences and VE.
+#'  Each matrix contains the point estimate and confidence intervals for the specified term.}
 #'  \item{gp_list}{A list containing the distributions g(d|x) and p(x) used for marginalization}
 #'  \item{model_0}{The fit object used to predict risk for unvaccinated group}
 #'  \item{model_1}{The fit object used to predict risk for vaccinated group}
@@ -66,8 +64,10 @@
  # \item{t0}{The timepoint at which VE was computed and vaccinated individuals were censored
  # \item{tau}{The delay period for assessing vaccination}
  # \item{n_boot}{The number of bootstrap replicates requested}
-#'  \item{n_success_boot}{The number of bootstrap samples with non-missing estimates}
-#'  \item{boot_mat}{If `return_boot = TRUE`, the bootstrap sample estimates}
+#'  \item{n_success_boot}{A numeric vector of the number of successful bootstrap samples for each time point.(Success bootstrap samples are
+#'  those that result in non-missing valid point estimates.)}
+#'  \item{boot_samples}{If `return_boot = TRUE`, a list of matrices for each term that contain the bootstrap estimates where the rows are the bootstrap iterations and
+#'  the columns are the time points.}
  # \item{alpha}{Significance level of confidence intervals returned}
  # \item{call}{The call to `obsve`}
 #' }
@@ -88,8 +88,8 @@ obsve <- function(data,
                   adjust_vars,
                   marginalizing_dist,
                   matched_dist_options = NULL,
-                  t0,
-                  censor_time = t0,
+                  times,
+                  censor_time = max(times),
                   tau = 14,
                   ci_type = "wald",
                   limit_type = "fixed",
@@ -99,7 +99,7 @@ obsve <- function(data,
                   formula_1 = NULL,
                   return_models = TRUE,
                   return_boot = TRUE,
-                  return_data = TRUE
+                  n_cores = 1
                   ){
 
      call <- match.call()
@@ -118,19 +118,22 @@ obsve <- function(data,
      # --------------------------------------------------------------------------
      # 1 - Get original estimate
      # --------------------------------------------------------------------------
-     original <- get_one_ve(data = data,
-                            outcome_name = outcome_name,
-                            event_name = event_name,
-                            trt_name = trt_name,
-                            time_name = time_name,
-                            adjust_vars = adjust_vars,
-                            marginalizing_dist = marginalizing_dist,
-                            matched_dist_options = matched_dist_options,
-                            t0 = t0,
-                            censor_time = censor_time,
-                            tau = tau,
-                            formula_0 = formula_0,
-                            formula_1 = formula_1)
+
+     estimation_args <- list(data = data,
+                             outcome_name = outcome_name,
+                             event_name = event_name,
+                             trt_name = trt_name,
+                             time_name = time_name,
+                             adjust_vars = adjust_vars,
+                             marginalizing_dist = marginalizing_dist,
+                             matched_dist_options = matched_dist_options,
+                             times = times,
+                             censor_time = censor_time,
+                             tau = tau,
+                             formula_0 = formula_0,
+                             formula_1 = formula_1)
+
+     original <- do.call("get_one_ve", estimation_args)
 
 
 
@@ -152,35 +155,34 @@ obsve <- function(data,
      }
 
 
+     unused_args <- names(estimation_args) %in% c("formula_0", "formula_1", "matched_dist_options")
+     estimate_ci_args <- c(estimation_args[!unused_args],
+                           list(boot_formula_0 = boot_formula_0,
+                                boot_formula_1 = boot_formula_1,
+                                matched_data = original$matched_data,
+                                pt_est = original$estimates,
+                                gp_list = original$gp_list,
+                                ci_type = ci_type,
+                                limit_type = limit_type,
+                                n_boot = n_boot,
+                                alpha = alpha,
+                                return_boot = return_boot,
+                                n_cores = n_cores))
 
-     boot_inference <- estimate_ci(data = data,
-                                   outcome_name = outcome_name,
-                                   event_name = event_name,
-                                   trt_name = trt_name,
-                                   time_name = time_name,
-                                   adjust_vars = adjust_vars,
-                                   marginalizing_dist = marginalizing_dist,
-                                   t0 = t0,
-                                   censor_time = censor_time,
-                                   tau = tau,
-                                   boot_formula_0 = boot_formula_0,
-                                   boot_formula_1 = boot_formula_1,
-                                   matched_data = original$matched_data,
-                                   pt_est = original$estimate,
-                                   gp_list = original$gp_list,
-                                   ci_type = ci_type,
-                                   limit_type = limit_type,
-                                   n_boot = n_boot,
-                                   alpha = alpha,
-                                   return_boot = return_boot )
+
+     boot_inference <- do.call("estimate_ci", estimate_ci_args)
 
 
      # --------------------------------------------------------------------------
      # 3 - Final result
      # --------------------------------------------------------------------------
+     pt_est <- original$estimates
+     ci_est <-boot_inference$ci_estimates
+     #ci_est <-boot_inference$ci_estimates
+     estimates <- list(psi_bar_0 = cbind(estimate = pt_est[,1], ci_est[[1]]),
+                       psi_bar_1 = cbind(estimate = pt_est[,2], ci_est[[2]]),
+                       ve = cbind(estimate = pt_est[,3], ci_est[[3]]))
 
-     estimates <- cbind(estimate = original$estimates,
-                            boot_inference$ci_estimates)
 
      # --------------------------------------------------------------------------
      # 4 - Return
@@ -196,13 +198,15 @@ obsve <- function(data,
          trt_name = trt_name,
          time_name = time_name,
          adjust_vars = adjust_vars,
-         t0 = t0,
+         times = times,
          censor_time = censor_time,
          tau = tau,
          ci_type = ci_type,
          limit_type = limit_type,
          n_boot = n_boot,
          n_success_boot = boot_inference$n_success_boot,
+         boot_error_inds = boot_inference$error_inds,
+         boot_na_list =boot_inference$ boot_na_list,
          alpha = alpha,
          call = call)
 
@@ -216,32 +220,13 @@ obsve <- function(data,
     if(return_boot){
         out$boot_samples <- boot_inference$boot_samples
     }
-    if(return_data){
-        out$data <- data
-    }
+
+     #for debugging
+     out$original <- original
+     out$one_boot_args <- boot_inference$one_boot_args
+
 
     return(out)
 }
-
-
-#' Convert estimates matrix to data frame
-#'
-#' @param estimates A matrix containing the point estimates and lower and
-#'  upper confidence bounds
-#'
-#' @return A data frame of the estimates
-#' @export
-#'
-estimates_to_df <- function(estimates){
-    estimates_df <- as.data.frame(estimates)
-    estimates_df$term <- rownames(estimates)
-    estimates_df <- estimates_df[, c("term", colnames(estimates))]
-    rownames(estimates_df) <- NULL
-
-    return(estimates_df)
-
-}
-
-
 
 
