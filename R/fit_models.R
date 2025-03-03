@@ -52,7 +52,7 @@ fit_model_0 <- function(data, outcome_name, event_name, trt_name, time_name,
 #' @rdname fit_model_0
 
 fit_model_1 <- function(data, outcome_name, event_name, trt_name, time_name,
-                        adjust_vars, t0, censor_time, tau, formula_1 = NULL){
+                        adjust_vars, censor_time, tau, formula_1 = NULL){
 
     #Define formula
     if(is.null(formula_1)){
@@ -69,7 +69,7 @@ fit_model_1 <- function(data, outcome_name, event_name, trt_name, time_name,
     #Define survival outcomes
     #for model_1, time-to-event variable is time from vaccination
     T1 <- outcome - D_obs
-    #for model_1, censor events after t0
+    #for model_1, censor events after censor_time
     T1_censored <- ifelse(T1 > censor_time, censor_time, T1)
     event <- ifelse(T1 > censor_time, 0, event)
 
@@ -86,7 +86,8 @@ fit_model_1 <- function(data, outcome_name, event_name, trt_name, time_name,
     fit_1 <- survival::coxph(formula_1_with_response, data_1, model = TRUE)
 
     if(any(is.na(stats::coef(fit_1)))){
-        warning("In model_1, at least one coefficient estimate is  NA")
+        print("In model_1, at least one coefficient estimate is  NA")
+        print(summary(fit_1))
     }
     fit_1$data <- data_1
     fit_1
