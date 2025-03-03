@@ -2,7 +2,7 @@
 % Please edit documentation in R/get_one_matching_ve.R
 \name{get_one_matching_ve}
 \alias{get_one_matching_ve}
-\title{Helper function to estimate marginal risk in matched data set}
+\title{Compute VE point estimate in matched data set}
 \usage{
 get_one_matching_ve(
   matched_data,
@@ -10,6 +10,7 @@ get_one_matching_ve(
   event_name,
   trt_name,
   time_name,
+  method,
   adjust,
   times,
   censor_time,
@@ -20,22 +21,34 @@ get_one_matching_ve(
 )
 }
 \arguments{
-\item{matched_data}{A data frame representing a matched cohort}
+\item{matched_data}{A data frame for the matched cohort}
 
-\item{outcome_name}{Character string representing the original outcome variable in  \code{matched_data}}
+\item{outcome_name}{Character string specifying the name of the outcome
+variable in \code{data}. Outcome variable should be a numeric representing follow-up time relative to study
+start d0.}
 
-\item{event_name}{Character string representing the original event variable in \code{matched_data}}
+\item{event_name}{Character string specifying the name of the event indicator
+variable in \code{data}. Event indicator should be numeric-valued: 1=event, 0=censored.}
 
-\item{trt_name}{Character string representing the original vaccination status variable in \code{matched_data}}
+\item{trt_name}{Character string specifying name of the vaccination indicator
+variable in \code{data}. Vaccination indicator is an indicator of ever receiving vaccine during the
+follow-up period and should be numeric-valued: 1=yes, 0 = no.}
 
-\item{time_name}{Character string representing the original vaccination time variable in \code{matched_data}}
+\item{time_name}{Character string specifying name of the vaccination time
+variable in \code{data}. Vaccination time should be NA if never received vaccine
+during follow-up.}
 
-\item{adjust}{A character vector  of variables in \code{adata} to adjust for, or a formula object.
-Do not include treatment variable.}
+\item{method}{Character string specifying method for survival estimation ("cox" for
+cox proportional hazards model or "km" for kaplan meier estimation)}
 
-\item{times}{A numeric vector of the time points at which to return cumulative incidence estimates}
+\item{adjust}{If \code{method = "cox"}, a formula or  character vector containing the names of covariates in
+\code{matched_data} to adjust for.}
 
-\item{censor_time}{Time at which observations should be censored. Typically the \code{max(times)}.}
+\item{times}{A numeric vector containing the times (relative to time of vaccination) at which to return
+the cumulative incidence estimates.}
+
+\item{censor_time}{The time at which vaccinated individuals are censored during model fitting.
+By default, this is set to \code{max(times)}.}
 
 \item{tau}{The time excluded after vaccination to allow building up of
 immunity}
@@ -43,14 +56,15 @@ immunity}
 \item{pair_censoring}{Logical to indicate if matched pairs should be censored
 when unvaccinated pair becomes vaccinated.}
 
-\item{separate}{If \code{TRUE}, models are fit in the treated and untreated groups separately}
+\item{separate}{If \code{TRUE}, models are fit in the treated and untreated groups separately.}
 
-\item{return_models}{If \code{TRUE}, fitted survival mdoels are returned.}
+\item{return_models}{Logical value: Should fitted survival models be returned?}
 }
 \value{
-The object returned by \code{\link[=estimate_marginal_risk]{estimate_marginal_risk()}}
+The object returned by \code{\link[=compute_marginal_ve]{compute_marginal_ve()}}
 }
 \description{
-First, creates the analysis matched data set. Then calls \code{\link[=estimate_marginal_risk]{estimate_marginal_risk()}},
-providing the appropriate outcomes based on the analysis data set.
+First, creates the analysis matched data set based on \code{matched_data}.
+Then calls \code{\link[=compute_marginal_ve]{compute_marginal_ve()}} on the analysis data set, specifying
+the appropriate outcome and treatment arguments.
 }

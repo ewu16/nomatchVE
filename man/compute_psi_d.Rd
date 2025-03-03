@@ -2,7 +2,7 @@
 % Please edit documentation in R/compute_psi_d.R
 \name{compute_psi_d}
 \alias{compute_psi_d}
-\title{Compute day- and covariate- specific risks psi_v(d,x)}
+\title{Compute day- and covariate- specific risks psi_v(t0; d, x) at a specific time point}
 \usage{
 compute_psi_d(fit_0, fit_1, time_name, t0, tau, gp_list)
 }
@@ -15,8 +15,7 @@ compute_psi_d(fit_0, fit_1, time_name, t0, tau, gp_list)
 variable in \code{data}. Vaccination time should be NA if never received vaccine
 during follow-up.}
 
-\item{t0}{The time (relative to time of vaccination) at which to return
-cumulative incidence estimates.}
+\item{t0}{A timepoint at which cumulative incidence should be evaluated}
 
 \item{tau}{The time excluded after vaccination to allow building up of
 immunity}
@@ -29,6 +28,6 @@ A data frame containing predicted risk for each (d,x) of interest under
 vaccine and no vaccine
 }
 \description{
-Given the fitted survival models, compute estimates of psi_v(d,x)
-for all d,x of interest.
+Given the fitted survival models, compute estimates of psi_v(t0; d, x)
+for all d,x of interest at a given timepoint t0
 }

@@ -4,12 +4,14 @@
 \alias{simultaneous_ci}
 \title{Compute simultaneous confidence intervals for timepoints object}
 \usage{
-simultaneous_ci(object, alpha)
+simultaneous_ci(object, alpha, seed = NULL)
 }
 \arguments{
-\item{object}{Object created by call to \code{\link[=timepoints]{timepoints()}}}
+\item{object}{Object created by call to \code{\link[=obsve]{obsve()}} or \code{\link[=matching_ve]{matching_ve()}}}
 
 \item{alpha}{Significance level for confidence interval}
+
+\item{seed}{Seed for reproducibility}
 }
 \value{
 A dataframe with lower and upper simultaneous confidence intervals for

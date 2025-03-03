@@ -22,7 +22,6 @@ fit_model_1(
   trt_name,
   time_name,
   adjust_vars,
-  t0,
   censor_time,
   tau,
   formula_1 = NULL
@@ -52,12 +51,8 @@ during follow-up.}
 \item{formula_0}{A formula or pre-fit model for estimating hazards in
 unvaccinated group (recommended for use only by power users)}
 
-\item{t0}{The time (relative to time of vaccination) at which to return
-cumulative incidence estimates.}
-
 \item{censor_time}{The time at which vaccinated individuals are censored during model fitting.
-If interested in multiple timepoints, recommended to set this to the maximum timepoint of interest
-and then using \code{\link[=timepoints]{timepoints()}}.}
+By default, this is set to \code{max(times)}.}
 
 \item{tau}{The time excluded after vaccination to allow building up of
 immunity}

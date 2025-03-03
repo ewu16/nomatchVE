@@ -13,14 +13,14 @@ get_one_ve(
   adjust_vars,
   marginalizing_dist,
   matched_dist_options,
-  t0,
+  times,
   censor_time,
   tau,
   formula_0,
   formula_1,
   return_models = TRUE,
   return_gp_list = TRUE,
-  return_matching = NULL
+  return_matching = TRUE
 )
 }
 \arguments{
@@ -54,12 +54,11 @@ parameters controlling process of creating matched cohort and matched analysis
 dataset from which marginalizing distributions will be estimated. List
 can be created by \code{\link[=matched_dist]{matched_dist()}}.}
 
-\item{t0}{The time (relative to time of vaccination) at which to return
-cumulative incidence estimates.}
+\item{times}{A numeric vector containing the times (relative to time of vaccination) at which to return
+the cumulative incidence estimates.}
 
 \item{censor_time}{The time at which vaccinated individuals are censored during model fitting.
-If interested in multiple timepoints, recommended to set this to the maximum timepoint of interest
-and then using \code{\link[=timepoints]{timepoints()}}.}
+By default, this is set to \code{max(times)}.}
 
 \item{tau}{The time excluded after vaccination to allow building up of
 immunity}
@@ -70,7 +69,7 @@ unvaccinated group (recommended for use only by power users)}
 \item{formula_1}{A formula or pre-fit model for estimating hazards in
 vaccinated group. (recommended for use only by power users)}
 
-\item{return_models}{Logical: Should survival models be returned?}
+\item{return_models}{Logical:  Should survival models be returned?}
 
 \item{return_gp_list}{Logical: Should marginalizing distributions be returned?}
 
@@ -80,16 +79,17 @@ TRUE if marginalizing_dist = "matched" and FALSE otherwise.}
 \value{
 A list containing the following:
 \describe{
-\item{estimates}{A named numeric vector containing point estimates for
-\verb{psi_bar_0, psi_bar_1, ve}}
+\item{estimates}{A matrix of estimates where the the columns of the matrix are the cumulative
+incidence/VE terms and the rows are the requested time points for evaluation.}
 \item{model_0, model_1}{If \code{return_models = TRUE}, the fitted survival models
 for unvaccinated and vaccinated.}
 \item{gp_list}{If \code{return_gp_list = TRUE}, the list of marginalizing distributions used.}
 \item{matched_data}{If \code{return_matching = TRUE}, the matched cohort}
 \item{matched_adata}{If \code{return_matching = TRUE}, the analysis-eligible
-matched cohort used to estimate \code{gp_list}}
+matched cohort}
 }
 }
 \description{
-This function is called by \link{obsve} as well as by \link{one_boot_ve}.
+This function computes point estimates of vaccine effectiveness
+based on the proposed method. Internally called by \link{obsve} and \link{one_boot_ve}.
 }

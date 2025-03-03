@@ -2,7 +2,7 @@
 % Please edit documentation in R/get_marginalizing_distributions.R
 \name{get_gp}
 \alias{get_gp}
-\title{Get empirical probability distributions g(d|x) and P(x) based on input data}
+\title{Get empirical probability distributions g(d|x) and p(x) based on input data}
 \usage{
 get_gp(df, outcome_name, trt_name, time_name, adjust_vars, tau)
 }
@@ -31,8 +31,12 @@ during follow-up.}
 immunity}
 }
 \value{
-A list of two data frames containing the estimated probabilities
+A list of the following:
+\describe{
+\item{g_dist}{A data frame containing the covariate-conditional day probabilities.
+Columns include \code{group_name} identifying the covariate group, \verb{<time_name> specifying the day, }prob\verb{specifying the covariate-conditional day probability, and each variables in}adjust_vars\verb{\} \\item\{p_dist\}\{A data frame containing the covariate probabilities. Columns include }group_name\verb{ identifying the covariate group,}prob\verb{specifying the covariate probability, and each variable in}adjust_vars`}
+}
 }
 \description{
-Get empirical probability distributions g(d|x) and P(x) based on input data
+Get empirical probability distributions g(d|x) and p(x) based on input data
 }

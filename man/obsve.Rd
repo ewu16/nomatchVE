@@ -14,8 +14,8 @@ obsve(
   adjust_vars,
   marginalizing_dist,
   matched_dist_options = NULL,
-  t0,
-  censor_time = t0,
+  times,
+  censor_time = max(times),
   tau = 14,
   ci_type = "wald",
   limit_type = "fixed",
@@ -25,7 +25,7 @@ obsve(
   formula_1 = NULL,
   return_models = TRUE,
   return_boot = TRUE,
-  return_data = TRUE
+  n_cores = 1
 )
 }
 \arguments{
@@ -59,12 +59,11 @@ parameters controlling process of creating matched cohort and matched analysis
 dataset from which marginalizing distributions will be estimated. List
 can be created by \code{\link[=matched_dist]{matched_dist()}}.}
 
-\item{t0}{The time (relative to time of vaccination) at which to return
-cumulative incidence estimates.}
+\item{times}{A numeric vector containing the times (relative to time of vaccination) at which to return
+the cumulative incidence estimates.}
 
 \item{censor_time}{The time at which vaccinated individuals are censored during model fitting.
-If interested in multiple timepoints, recommended to set this to the maximum timepoint of interest
-and then using \code{\link[=timepoints]{timepoints()}}.}
+By default, this is set to \code{max(times)}.}
 
 \item{tau}{The time excluded after vaccination to allow building up of
 immunity}
@@ -89,24 +88,25 @@ unvaccinated group (recommended for use only by power users)}
 \item{formula_1}{A formula or pre-fit model for estimating hazards in
 vaccinated group. (recommended for use only by power users)}
 
-\item{return_models}{Logical value: Should fitted survival models be returned? Must be set to
-\code{TRUE} If user plans to use \code{\link[=timepoints]{timepoints()}} to obtain VE estimates at times other than \code{t0}}
+\item{return_models}{Logical value: Should fitted survival models be returned?}
 
 \item{return_boot}{Logical value: Should bootstrap estimates be returned?}
 
-\item{return_data}{Logical value: Should original data be returned? Must be set to
-\code{TRUE} If user plans to use \code{\link[=timepoints]{timepoints()}} to obtain VE estimates at times other than \code{t0}}
+\item{n_cores}{Number of cores to use to when running bootstrapping procedure. Passed as \code{mc.cores} argument to \code{parallel::mclapply}.
+If \code{n_cores > 1}, this parallelizes the bootstrapping procedure on Unix-like systems (not available on Windows).}
 }
 \value{
 A list. In addition to information related to the call/arguments to \code{obsve}, contains the following:
 \describe{
-\item{estimates}{A matrix containing the point estimates and lower and
-upper confidence bounds}
+\item{estimates}{A list of matrices for cumulative incidences and VE.
+Each matrix contains the point estimate and confidence intervals for the specified term.}
 \item{gp_list}{A list containing the distributions g(d|x) and p(x) used for marginalization}
 \item{model_0}{The fit object used to predict risk for unvaccinated group}
 \item{model_1}{The fit object used to predict risk for vaccinated group}
-\item{n_success_boot}{The number of bootstrap samples with non-missing estimates}
-\item{boot_mat}{If \code{return_boot = TRUE}, the bootstrap sample estimates}
+\item{n_success_boot}{A numeric vector of the number of successful bootstrap samples for each time point.(Success bootstrap samples are
+those that result in non-missing valid point estimates.)}
+\item{boot_samples}{If \code{return_boot = TRUE}, a list of matrices for each term that contain the bootstrap estimates where the rows are the bootstrap iterations and
+the columns are the time points.}
 }
 }
 \description{

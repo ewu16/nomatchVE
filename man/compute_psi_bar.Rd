@@ -7,16 +7,17 @@
 compute_psi_bar(psi_d, gp_list)
 }
 \arguments{
-\item{psi_d}{A data frame containing estimates of psi_v(d,x). Data frame should
-contain the columns `risk_0, risk_1,}
+\item{psi_d}{A data frame containing estimates of psi_v(t0; d, x). Data frame should
+contain the columns \verb{risk_0, risk_1} representing psi_0(t0; d, x) and psi_1(t0; d, x) respectively.}
 
-\item{gp_list}{A list containing the marginalizing distributions}
+\item{gp_list}{A list containing the marginalizing distributions
+#TODO: assumptions on gp_list}
 }
 \value{
 {A named numeric vector containing point estimates for
 \verb{psi_bar_0, psi_bar_1}}
 }
 \description{
-This function marginalizes psi_v(d,x) over estimated or pre-specified
+This function marginalizes psi_v(t0; d, x) over estimated or pre-specified
 marginalizing distributions
 }

@@ -10,40 +10,55 @@ matching_ve(
   event_name,
   trt_name,
   time_name,
+  method,
   adjust,
   times,
   censor_time,
   tau,
   pair_censoring = TRUE,
-  separate = FALSE,
+  separate = TRUE,
   ci_type = "wald",
   limit_type = "fixed",
   data = NULL,
-  id_name = NULL,
+  id_name = "ID",
   matching_vars = NULL,
+  replace = FALSE,
   n_boot = 0,
   alpha = 0.05,
   return_models = TRUE,
-  return_boot = TRUE
+  return_boot = TRUE,
+  n_cores = 1
 )
 }
 \arguments{
-\item{matched_data}{A data frame representing a matched cohort}
+\item{matched_data}{A data frame for the matched cohort}
 
-\item{outcome_name}{Character string representing the original outcome variable in  \code{matched_data}}
+\item{outcome_name}{Character string specifying the name of the outcome
+variable in \code{data}. Outcome variable should be a numeric representing follow-up time relative to study
+start d0.}
 
-\item{event_name}{Character string representing the original event variable in \code{matched_data}}
+\item{event_name}{Character string specifying the name of the event indicator
+variable in \code{data}. Event indicator should be numeric-valued: 1=event, 0=censored.}
 
-\item{trt_name}{Character string representing the original vaccination status variable in \code{matched_data}}
+\item{trt_name}{Character string specifying name of the vaccination indicator
+variable in \code{data}. Vaccination indicator is an indicator of ever receiving vaccine during the
+follow-up period and should be numeric-valued: 1=yes, 0 = no.}
 
-\item{time_name}{Character string representing the original vaccination time variable in \code{matched_data}}
+\item{time_name}{Character string specifying name of the vaccination time
+variable in \code{data}. Vaccination time should be NA if never received vaccine
+during follow-up.}
 
-\item{adjust}{A character vector  of variables in \code{adata} to adjust for, or a formula object.
-Do not include treatment variable.}
+\item{method}{Character string specifying method for survival estimation ("cox" for
+cox proportional hazards model or "km" for kaplan meier estimation)}
 
-\item{times}{A numeric vector of the time points at which to return cumulative incidence estimates}
+\item{adjust}{If \code{method = "cox"}, a formula or  character vector containing the names of covariates in
+\code{matched_data} to adjust for.}
 
-\item{censor_time}{Time at which observations should be censored. Typically the \code{max(times)}.}
+\item{times}{A numeric vector containing the times (relative to time of vaccination) at which to return
+the cumulative incidence estimates.}
+
+\item{censor_time}{The time at which vaccinated individuals are censored during model fitting.
+By default, this is set to \code{max(times)}.}
 
 \item{tau}{The time excluded after vaccination to allow building up of
 immunity}
@@ -51,21 +66,21 @@ immunity}
 \item{pair_censoring}{Logical to indicate if matched pairs should be censored
 when unvaccinated pair becomes vaccinated.}
 
-\item{separate}{If \code{TRUE}, models are fit in the treated and untreated groups separately}
+\item{separate}{If \code{TRUE}, models are fit in the treated and untreated groups separately.}
 
 \item{ci_type}{Character string indicating which type of confidence interval
 to return ("wald", "percentile", "both")}
 
-\item{limit_type}{Character string indicating whether the marginalizing
-distributions of interest are the estimated distributions in the "limit"
-or "fixed" sense. For a prespecified marginalizing_dist, limit_type is
-always fixed.}
+\item{limit_type}{If \verb{limit_type = "limit", the matching procedure is performed in each bootstrap iteration. If }limit_type = "fixed"`, bootstrap samples are formed from the
+original matched data set.}
 
-\item{data}{If limit_type = "limit", the original data used to constructed the matched cohort}
+\item{data}{If \code{limit_type = "limit"}, the original data used to constructed the matched cohort}
 
-\item{id_name}{Character string representing the individual identifier variable  in \code{data}}
+\item{id_name}{If \code{limit_type = "limit"}, character string representing the individual identifier variable  in \code{data}}
 
-\item{matching_vars}{A character vector containing the names of variables in \code{data} to match on.}
+\item{matching_vars}{If \code{limit_type = "limit"}, a character vector containing the names of variables in \code{data} to match on.}
+
+\item{replace}{If \code{limit_type = "limit"}, logical: Should matching be done with replacement?}
 
 \item{n_boot}{Number of bootstrap replicated used to compute confidence
 intervals}
@@ -73,20 +88,24 @@ intervals}
 \item{alpha}{Significance level used to compute confidence intervals.
 Confidence intervals have nominal level \code{1 - alpha}.}
 
-\item{return_models}{If \code{TRUE}, fitted survival mdoels are returned.}
+\item{return_models}{Logical value: Should fitted survival models be returned?}
 
 \item{return_boot}{Logical value: Should bootstrap estimates be returned?}
+
+\item{n_cores}{Number of cores to use to when running bootstrapping procedure. Passed as \code{mc.cores} argument to \code{parallel::mclapply}.
+If \code{n_cores > 1}, this parallelizes the bootstrapping procedure on Unix-like systems (not available on Windows).}
 }
 \value{
 A list containing the following:
 \describe{
 \item{estimates}{A list of matrices of the estimates at each timepoint. Rows of
 each matrix are the terms "risk_0", "risk_1", "ve". Columns of each matrix
-gives the point estimate and confidence intervals at the specified timepoint.}
+gives the point estimate and confidence intervals at the specified time point.}
 \item{times}{The timepoints at which VE was evaluated}
-\item{n_success_boot}{The number of bootstraps for all the timepoints. TODO: inconsistent with \code{\link[=timepoints]{timepoints()}}.}
-\item{models}{If \code{return_models = TRUE}, the models used to fit the original point estimates}
-\item{boot_samples_list}{If \code{return_boot = TRUE}, a list of matrices containing the bootstrap estimates for each timepoint}
+\item{n_success_boot}{A numeric vector of the number of successful bootstrap samples for each time point.(Success bootstrap samples are
+those that result in non-missing valid point estimates.)}
+\item{boot_samples}{If \code{return_boot = TRUE}, a list of matrices for each term that contain the bootstrap estimates where the rows are the bootstrap iterations and
+the columns are the time points.}
 }
 }
 \description{

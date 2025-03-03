@@ -3,7 +3,7 @@
 \name{predict_from_model_0}
 \alias{predict_from_model_0}
 \alias{predict_from_model_1}
-\title{Compute psi_0(d,x) and psi_1(d,x), respectively.}
+\title{Compute psi_0(t0; d, x) and psi_1(t0; d,x ), respectively.}
 \usage{
 predict_from_model_0(fit_0, time_name, t0, tau, gp_list)
 
@@ -16,8 +16,7 @@ predict_from_model_1(fit_1, time_name, t0, tau, gp_list)
 variable in \code{data}. Vaccination time should be NA if never received vaccine
 during follow-up.}
 
-\item{t0}{The time (relative to time of vaccination) at which to return
-cumulative incidence estimates.}
+\item{t0}{A timepoint at which cumulative incidence should be evaluated}
 
 \item{tau}{The time excluded after vaccination to allow building up of
 immunity}
@@ -28,13 +27,13 @@ will be used for prediction}
 \item{fit_1}{A fitted survival model for the vaccinated group}
 }
 \value{
-A data frame of predictions
+A data frame of predictions for day and covariate groups in in \code{gp_list}
 }
 \description{
 These functions compute the conditional day- and covariate-specific cumulative
 incidences.
-\code{predict_from_model_0()} calculates \code{psi_0(d,x)} by using x as covariates in prediction and obtaining survival
+\code{predict_from_model_0()} calculates \verb{psi_0(t0; d, x)} by using x as covariates in prediction and obtaining survival
 at d + t0 and d + tau days
-\code{predict_from_model_1()} calculates \code{psi_1(d,x)} by using x and d as covariates in prediction
+\code{predict_from_model_1()} calculates \verb{psi_1(t0; d, x)} by using x and d as covariates in prediction
 and obtaining survival at t0 days
 }

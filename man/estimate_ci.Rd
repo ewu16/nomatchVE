@@ -2,7 +2,7 @@
 % Please edit documentation in R/estimate_ci.R
 \name{estimate_ci}
 \alias{estimate_ci}
-\title{Estimate bootstrapped confidence intervals for VE}
+\title{Estimate bootstrapped confidence intervals for proposed VE estimator}
 \usage{
 estimate_ci(
   data,
@@ -12,7 +12,7 @@ estimate_ci(
   time_name,
   adjust_vars,
   marginalizing_dist,
-  t0,
+  times,
   censor_time,
   tau,
   boot_formula_0,
@@ -24,7 +24,8 @@ estimate_ci(
   n_boot,
   pt_est = NULL,
   alpha = 0.05,
-  return_boot = TRUE
+  return_boot = TRUE,
+  n_cores = 1
 )
 }
 \arguments{
@@ -53,12 +54,11 @@ day/covariate distributions to marginalize over. Values are "observed" or
 "matched". Alternatively, for pre-specified marginalizing distributions can
 be a list of 2 dataframes named \code{g_dist} and \code{p_dist}.}
 
-\item{t0}{The time (relative to time of vaccination) at which to return
-cumulative incidence estimates.}
+\item{times}{A numeric vector containing the times (relative to time of vaccination) at which to return
+the cumulative incidence estimates.}
 
 \item{censor_time}{The time at which vaccinated individuals are censored during model fitting.
-If interested in multiple timepoints, recommended to set this to the maximum timepoint of interest
-and then using \code{\link[=timepoints]{timepoints()}}.}
+By default, this is set to \code{max(times)}.}
 
 \item{tau}{The time excluded after vaccination to allow building up of
 immunity}
@@ -85,19 +85,22 @@ always fixed.}
 \item{n_boot}{Number of bootstrap replicated used to compute confidence
 intervals}
 
-\item{pt_est}{A named numeric vector containing point estimates for
-\verb{psi_bar_0, psi_bar_1, ve}}
+\item{pt_est}{A matrix of estimates. The columns of the matrix are the cumulative
+incidence/VE terms and the rows are the requested timepoints for evaluation.}
 
 \item{alpha}{Significance level used to compute confidence intervals.
 Confidence intervals have nominal level \code{1 - alpha}.}
 
 \item{return_boot}{Logical value: Should bootstrap estimates be returned?}
+
+\item{n_cores}{Number of cores to use to when running bootstrapping procedure. Passed as \code{mc.cores} argument to \code{parallel::mclapply}.
+If \code{n_cores > 1}, this parallelizes the bootstrapping procedure on Unix-like systems (not available on Windows).}
 }
 \value{
 A list containing the following:
 \describe{
-\item{ci_estimates}{A matrix containing the lower and upper confidence interval bounds
-and bootstrapped standard eror. When \code{ci_type = "wald"}, the bootstrapped standard errors
+\item{ci_estimates}{A list of matrices containing the lower and upper confidence interval bounds and
+bootstrap standard error for each term. When \code{ci_type = "wald"}, the bootstrapped standard errors
 on the transformed scale are also included.}
 \item{n_success_boot}{The number of bootstrap samples used to compute confidence interval}
 \item{boot_samples}{A matrix containing estimates from all bootstrap replications. Rows
@@ -105,6 +108,5 @@ represent bootstrap iterations, columns the term estimated.}
 }
 }
 \description{
-This function computes Wald and percentile bootstrapped confidence
-intervals for the proposed VE estimator.
+Estimate bootstrapped confidence intervals for proposed VE estimator
 }
