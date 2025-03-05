@@ -41,15 +41,19 @@ variable in \code{data}. Vaccination time should be NA if never received vaccine
 during follow-up.}
 
 \item{adjust_vars}{A character vector containing the names of variables in
-\code{data} to adjust for.}
-
-\item{marginalizing_dist}{Character string describing the type of estimated
-day/covariate distributions to marginalize over. Values are "observed" or
-"matched". Alternatively, for pre-specified marginalizing distributions can
-be a list of 2 dataframes named \code{g_dist} and \code{p_dist}.}
-
-\item{times}{A numeric vector containing the times (relative to time of vaccination) at which to return
+\code{data} to adjust for.
+#' @param times A numeric vector containing the times (relative to time of vaccination) at which to return
 the cumulative incidence estimates.}
+
+\item{marginalizing_dist}{Generally, should be set to "observed", the default value,
+which estimates the marginalizing distributions based on the observed data.
+For historical purposes, marginalizing_dist can also be set to "matched", which uses the marginalizing distributions
+of a matched dataset and requires use of the \code{matched_dist_options} argument.
+To providing a fixed choice of marginalizing weight functions, \code{marginalizing_dist}
+should be a list of 2 dataframes named \code{g_dist} and \code{p_dist}. \code{g_dist} must be a dataframe with the columns
+<time_name> describing the time of vaccination, all variables in \if{html}{\out{<adjust>}} , \code{group_name} identifying
+each unique covariate group, and \code{prob} for the corresponding probability. \code{p_dist} must be a dataframe with
+all variables in \if{html}{\out{<adjust>}} and variable \code{prob} for the corresponding probability.}
 
 \item{censor_time}{The time at which vaccinated individuals are censored during model fitting.
 By default, this is set to \code{max(times)}.}
@@ -68,10 +72,9 @@ vaccinated group for bootstrap samples (not a model)}
 \item{gp_list}{List of two dataframes named \code{g_dist} and \code{p_dist} representing
 the marginalizing distributions to use.}
 
-\item{limit_type}{Character string indicating whether the marginalizing
-distributions of interest are the estimated distributions in the "limit"
-or "fixed" sense. For a prespecified marginalizing_dist, limit_type is
-always fixed.}
+\item{limit_type}{Generally, should be set to "limit", the default value.  For historical purposes,
+\code{limit_type} can also be set to fixed, which treats the marginalizing distributions as
+fixed. For a prespecified marginalizing_dist, \code{limit_type} is always fixed.}
 }
 \value{
 A matrix of bootstrapped estimates where the the columns of the matrix are the cumulative

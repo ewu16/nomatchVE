@@ -12,15 +12,15 @@ obsve(
   trt_name,
   time_name,
   adjust_vars,
-  marginalizing_dist,
-  matched_dist_options = NULL,
   times,
   censor_time = max(times),
   tau = 14,
   ci_type = "wald",
-  limit_type = "fixed",
+  limit_type = "limit",
   n_boot = 0,
   alpha = 0.05,
+  marginalizing_dist = "observed",
+  matched_dist_options = NULL,
   formula_0 = NULL,
   formula_1 = NULL,
   return_models = TRUE,
@@ -47,19 +47,8 @@ variable in \code{data}. Vaccination time should be NA if never received vaccine
 during follow-up.}
 
 \item{adjust_vars}{A character vector containing the names of variables in
-\code{data} to adjust for.}
-
-\item{marginalizing_dist}{Character string describing the type of estimated
-day/covariate distributions to marginalize over. Values are "observed" or
-"matched". Alternatively, for pre-specified marginalizing distributions can
-be a list of 2 dataframes named \code{g_dist} and \code{p_dist}.}
-
-\item{matched_dist_options}{If \code{marginalizing_dist == "matched"}, a list of
-parameters controlling process of creating matched cohort and matched analysis
-dataset from which marginalizing distributions will be estimated. List
-can be created by \code{\link[=matched_dist]{matched_dist()}}.}
-
-\item{times}{A numeric vector containing the times (relative to time of vaccination) at which to return
+\code{data} to adjust for.
+#' @param times A numeric vector containing the times (relative to time of vaccination) at which to return
 the cumulative incidence estimates.}
 
 \item{censor_time}{The time at which vaccinated individuals are censored during model fitting.
@@ -71,16 +60,30 @@ immunity}
 \item{ci_type}{Character string indicating which type of confidence interval
 to return ("wald", "percentile", "both")}
 
-\item{limit_type}{Character string indicating whether the marginalizing
-distributions of interest are the estimated distributions in the "limit"
-or "fixed" sense. For a prespecified marginalizing_dist, limit_type is
-always fixed.}
+\item{limit_type}{Generally, should be set to "limit", the default value.  For historical purposes,
+\code{limit_type} can also be set to fixed, which treats the marginalizing distributions as
+fixed. For a prespecified marginalizing_dist, \code{limit_type} is always fixed.}
 
 \item{n_boot}{Number of bootstrap replicated used to compute confidence
 intervals}
 
 \item{alpha}{Significance level used to compute confidence intervals.
 Confidence intervals have nominal level \code{1 - alpha}.}
+
+\item{marginalizing_dist}{Generally, should be set to "observed", the default value,
+which estimates the marginalizing distributions based on the observed data.
+For historical purposes, marginalizing_dist can also be set to "matched", which uses the marginalizing distributions
+of a matched dataset and requires use of the \code{matched_dist_options} argument.
+To providing a fixed choice of marginalizing weight functions, \code{marginalizing_dist}
+should be a list of 2 dataframes named \code{g_dist} and \code{p_dist}. \code{g_dist} must be a dataframe with the columns
+<time_name> describing the time of vaccination, all variables in \if{html}{\out{<adjust>}} , \code{group_name} identifying
+each unique covariate group, and \code{prob} for the corresponding probability. \code{p_dist} must be a dataframe with
+all variables in \if{html}{\out{<adjust>}} and variable \code{prob} for the corresponding probability.}
+
+\item{matched_dist_options}{If \code{marginalizing_dist == "matched"}, a list of
+parameters controlling process of creating matched cohort and matched analysis
+dataset from which marginalizing distributions will be estimated. List
+can be created by \code{\link[=matched_dist]{matched_dist()}}.}
 
 \item{formula_0}{A formula or pre-fit model for estimating hazards in
 unvaccinated group (recommended for use only by power users)}
@@ -100,7 +103,7 @@ A list. In addition to information related to the call/arguments to \code{obsve}
 \describe{
 \item{estimates}{A list of matrices for cumulative incidences and VE.
 Each matrix contains the point estimate and confidence intervals for the specified term.}
-\item{gp_list}{A list containing the distributions g(d|x) and p(x) used for marginalization}
+\item{gp_list}{A list containing the distributions g(d|x) and p(x) used for marginalization}.
 \item{model_0}{The fit object used to predict risk for unvaccinated group}
 \item{model_1}{The fit object used to predict risk for vaccinated group}
 \item{n_success_boot}{A numeric vector of the number of successful bootstrap samples for each time point.(Success bootstrap samples are

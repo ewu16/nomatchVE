@@ -28,11 +28,8 @@ time should be the time to event from vaccination/matched index date}
 
 \item{adata_trt_name}{Character string specifying the treatment variable in \code{adata}}
 
-\item{times}{A numeric vector containing the times (relative to time of vaccination) at which to return
-the cumulative incidence estimates.}
-
 \item{method}{Character string specifying method for survival estimation ("cox" for
-cox proportional hazards model or "km" for kaplan meier estimation)}
+Cox proportional hazards regression model or "km" for Kaplan-Meier estimation)}
 
 \item{adjust}{If \code{method = "cox"}, a formula or  character vector containing the names of covariates in
 \code{matched_data} to adjust for.}
@@ -40,7 +37,7 @@ cox proportional hazards model or "km" for kaplan meier estimation)}
 \item{censor_time}{The time at which vaccinated individuals are censored during model fitting.
 By default, this is set to \code{max(times)}.}
 
-\item{separate}{If \code{TRUE}, models are fit in the treated and untreated groups separately.}
+\item{separate}{If \code{method = cox} and \code{separate = TRUE}, Cox regression models are fit in the treated and untreated groups separately.}
 
 \item{return_models}{Logical value: Should fitted survival models be returned?}
 }

@@ -49,13 +49,10 @@ variable in \code{data}. Vaccination time should be NA if never received vaccine
 during follow-up.}
 
 \item{method}{Character string specifying method for survival estimation ("cox" for
-cox proportional hazards model or "km" for kaplan meier estimation)}
+Cox proportional hazards regression model or "km" for Kaplan-Meier estimation)}
 
 \item{adjust}{If \code{method = "cox"}, a formula or  character vector containing the names of covariates in
 \code{matched_data} to adjust for.}
-
-\item{times}{A numeric vector containing the times (relative to time of vaccination) at which to return
-the cumulative incidence estimates.}
 
 \item{censor_time}{The time at which vaccinated individuals are censored during model fitting.
 By default, this is set to \code{max(times)}.}
@@ -66,13 +63,14 @@ immunity}
 \item{pair_censoring}{Logical to indicate if matched pairs should be censored
 when unvaccinated pair becomes vaccinated.}
 
-\item{separate}{If \code{TRUE}, models are fit in the treated and untreated groups separately.}
+\item{separate}{If \code{method = cox} and \code{separate = TRUE}, Cox regression models are fit in the treated and untreated groups separately.}
 
 \item{ci_type}{Character string indicating which type of confidence interval
 to return ("wald", "percentile", "both")}
 
-\item{limit_type}{If \verb{limit_type = "limit", the matching procedure is performed in each bootstrap iteration. If }limit_type = "fixed"`, bootstrap samples are formed from the
-original matched data set.}
+\item{limit_type}{The default value is \code{limit_type = "fixed"}, wherein bootstrap samples are formed from the
+original matched data set. If `limit_type = "limit", the matching procedure is performed in each
+bootstrap iteration.}
 
 \item{data}{If \code{limit_type = "limit"}, the original data used to constructed the matched cohort}
 

@@ -2,10 +2,8 @@ url: https://ewu16.github.io/obsve/
 template:
   bootstrap: 5
 reference:
-
 - title: Proposed method
-  contents:
-  - obsve
+  contents: obsve
 - subtitle: Estimation
   contents:
   - get_one_ve
@@ -16,15 +14,12 @@ reference:
   - predict_from_model_0
   - compute_psi_d
   - compute_psi_bar
-  - add_ve
   - compute_ve_t0
   - compute_ve
-
 - subtitle: Inference
   contents:
   - estimate_ci
   - one_boot_ve
-
 - title: Matching
   contents:
   - matching_ve
@@ -38,15 +33,12 @@ reference:
   - compute_marginal_ve
   - compute_cox_ve
   - compute_km_ve
-
 - subtitle: Inference
   contents:
   - estimate_matching_ci
   - one_boot_matching
-
 - title: Data
   contents: simdata
-
 - title: Utilities
   contents:
   - estimate_general_ci
@@ -55,7 +47,6 @@ reference:
   - compute_percentile_ci
   - estimates_to_df
   - estimates_by_time
-
 - title: In Progress
   contents:
   - simultaneous_ci

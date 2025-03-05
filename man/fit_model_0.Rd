@@ -46,7 +46,9 @@ variable in \code{data}. Vaccination time should be NA if never received vaccine
 during follow-up.}
 
 \item{adjust_vars}{A character vector containing the names of variables in
-\code{data} to adjust for.}
+\code{data} to adjust for.
+#' @param times A numeric vector containing the times (relative to time of vaccination) at which to return
+the cumulative incidence estimates.}
 
 \item{formula_0}{A formula or pre-fit model for estimating hazards in
 unvaccinated group (recommended for use only by power users)}

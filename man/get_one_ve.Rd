@@ -42,20 +42,24 @@ variable in \code{data}. Vaccination time should be NA if never received vaccine
 during follow-up.}
 
 \item{adjust_vars}{A character vector containing the names of variables in
-\code{data} to adjust for.}
+\code{data} to adjust for.
+#' @param times A numeric vector containing the times (relative to time of vaccination) at which to return
+the cumulative incidence estimates.}
 
-\item{marginalizing_dist}{Character string describing the type of estimated
-day/covariate distributions to marginalize over. Values are "observed" or
-"matched". Alternatively, for pre-specified marginalizing distributions can
-be a list of 2 dataframes named \code{g_dist} and \code{p_dist}.}
+\item{marginalizing_dist}{Generally, should be set to "observed", the default value,
+which estimates the marginalizing distributions based on the observed data.
+For historical purposes, marginalizing_dist can also be set to "matched", which uses the marginalizing distributions
+of a matched dataset and requires use of the \code{matched_dist_options} argument.
+To providing a fixed choice of marginalizing weight functions, \code{marginalizing_dist}
+should be a list of 2 dataframes named \code{g_dist} and \code{p_dist}. \code{g_dist} must be a dataframe with the columns
+<time_name> describing the time of vaccination, all variables in \if{html}{\out{<adjust>}} , \code{group_name} identifying
+each unique covariate group, and \code{prob} for the corresponding probability. \code{p_dist} must be a dataframe with
+all variables in \if{html}{\out{<adjust>}} and variable \code{prob} for the corresponding probability.}
 
 \item{matched_dist_options}{If \code{marginalizing_dist == "matched"}, a list of
 parameters controlling process of creating matched cohort and matched analysis
 dataset from which marginalizing distributions will be estimated. List
 can be created by \code{\link[=matched_dist]{matched_dist()}}.}
-
-\item{times}{A numeric vector containing the times (relative to time of vaccination) at which to return
-the cumulative incidence estimates.}
 
 \item{censor_time}{The time at which vaccinated individuals are censored during model fitting.
 By default, this is set to \code{max(times)}.}

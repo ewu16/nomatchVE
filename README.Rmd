@@ -62,7 +62,6 @@ times <- seq(30, 180, by = 30)
 censor_time <- max(times)
 tau <- 14
 ci_type <- "wald"
-limit_type <- "fixed"
 n_boot <- 10
 alpha <- .05
 
@@ -75,31 +74,26 @@ fit1 <- obsve(data = simdata,
               trt_name = trt_name,
               time_name = time_name, 
               adjust_vars = adjust_vars,
-              marginalizing_dist = "observed",
               times = times,
               censor_time = censor_time, 
               tau = tau,
               ci_type = ci_type,
-              limit_type =  limit_type,
               n_boot = n_boot, 
               alpha = alpha)
              
 fit1$estimates
 
+#Plot pointwise intervals 
+plot_ve_panel(fit1 , ci_type = "wald") 
+
 #Compute simultaneous CI
 simul_ci <- simultaneous_ci(fit1, alpha, seed = 1234)
 simul_ci$estimates
 
-#Make nice dataframes of results
-estimates_df <- estimates_to_df(fit1$estimates)
-simul_df <- estimates_to_df(simul_ci$estimates)
-result_df <- merge(estimates_df, simul_df, all.x = TRUE, sort = FALSE)
-head(result_df)
-
 #Plot simultaneous confidence bands 
-plot_ve_panel(result_df, ci_type = "simul") 
- 
+plot_ve_panel(simul_ci , ci_type = "simul") 
 
+ 
 
 
 # ------------------------------------------------------------------------------
@@ -125,19 +119,11 @@ fit_matching <-matching_ve(matched_data = matched_data,
                            event_name = event_name,
                            trt_name = trt_name,
                            time_name = time_name,
-                           method = "cox",
-                           adjust = adjust_vars,
+                           method = "km",
                            times = times,
                            censor_time = censor_time,
                            tau = tau,
-                           pair_censoring = TRUE,
-                           separate = TRUE,
                            ci_type = ci_type,
-                           limit_type = limit_type,
-                           data = simdata,
-                           id_name = id_name,
-                           matching_vars = matching_vars,
-                           replace = FALSE, 
                            n_boot = n_boot,
                            alpha = alpha) 
    
@@ -150,7 +136,7 @@ fit_matching$estimates
 
 
 
-```{r, include = FALSE}
+```{r, eval = FALSE, include = FALSE}
 
 #proposed with matching marginalizing distribution 
 

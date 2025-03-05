@@ -10,21 +10,21 @@ matching_ve(
   event_name,
   trt_name,
   time_name,
-  method,
-  adjust,
+  method = "km",
+  adjust = NULL,
+  pair_censoring = TRUE,
+  separate = TRUE,
   times,
   censor_time,
   tau,
-  pair_censoring = TRUE,
-  separate = TRUE,
   ci_type = "wald",
+  n_boot = 0,
+  alpha = 0.05,
   limit_type = "fixed",
   data = NULL,
   id_name = "ID",
   matching_vars = NULL,
   replace = FALSE,
-  n_boot = 0,
-  alpha = 0.05,
   return_models = TRUE,
   return_boot = TRUE,
   n_cores = 1
@@ -49,13 +49,15 @@ variable in \code{data}. Vaccination time should be NA if never received vaccine
 during follow-up.}
 
 \item{method}{Character string specifying method for survival estimation ("cox" for
-cox proportional hazards model or "km" for kaplan meier estimation)}
+Cox proportional hazards regression model or "km" for Kaplan-Meier estimation)}
 
 \item{adjust}{If \code{method = "cox"}, a formula or  character vector containing the names of covariates in
 \code{matched_data} to adjust for.}
 
-\item{times}{A numeric vector containing the times (relative to time of vaccination) at which to return
-the cumulative incidence estimates.}
+\item{pair_censoring}{Logical to indicate if matched pairs should be censored
+when unvaccinated pair becomes vaccinated.}
+
+\item{separate}{If \code{method = cox} and \code{separate = TRUE}, Cox regression models are fit in the treated and untreated groups separately.}
 
 \item{censor_time}{The time at which vaccinated individuals are censored during model fitting.
 By default, this is set to \code{max(times)}.}
@@ -63,16 +65,18 @@ By default, this is set to \code{max(times)}.}
 \item{tau}{The time excluded after vaccination to allow building up of
 immunity}
 
-\item{pair_censoring}{Logical to indicate if matched pairs should be censored
-when unvaccinated pair becomes vaccinated.}
-
-\item{separate}{If \code{TRUE}, models are fit in the treated and untreated groups separately.}
-
 \item{ci_type}{Character string indicating which type of confidence interval
 to return ("wald", "percentile", "both")}
 
-\item{limit_type}{If \verb{limit_type = "limit", the matching procedure is performed in each bootstrap iteration. If }limit_type = "fixed"`, bootstrap samples are formed from the
-original matched data set.}
+\item{n_boot}{Number of bootstrap replicated used to compute confidence
+intervals}
+
+\item{alpha}{Significance level used to compute confidence intervals.
+Confidence intervals have nominal level \code{1 - alpha}.}
+
+\item{limit_type}{The default value is \code{limit_type = "fixed"}, wherein bootstrap samples are formed from the
+original matched data set. If `limit_type = "limit", the matching procedure is performed in each
+bootstrap iteration.}
 
 \item{data}{If \code{limit_type = "limit"}, the original data used to constructed the matched cohort}
 
@@ -81,12 +85,6 @@ original matched data set.}
 \item{matching_vars}{If \code{limit_type = "limit"}, a character vector containing the names of variables in \code{data} to match on.}
 
 \item{replace}{If \code{limit_type = "limit"}, logical: Should matching be done with replacement?}
-
-\item{n_boot}{Number of bootstrap replicated used to compute confidence
-intervals}
-
-\item{alpha}{Significance level used to compute confidence intervals.
-Confidence intervals have nominal level \code{1 - alpha}.}
 
 \item{return_models}{Logical value: Should fitted survival models be returned?}
 
