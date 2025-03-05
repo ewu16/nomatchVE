@@ -46,7 +46,6 @@ get_one_ve <- function(data,
 
     # handle marginalizing_dist which can be list or string
     if(is.list(marginalizing_dist)){
-        #TODO: check marginalizing_dist is proper gp_list?
         gp_list <- marginalizing_dist
         is_observed_marg <-is_matching_marg <- FALSE
     }else{

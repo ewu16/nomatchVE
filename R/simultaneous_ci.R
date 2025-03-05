@@ -7,7 +7,6 @@
 #' each timepoint
 #' @export
 simultaneous_ci <- function(object, alpha, seed = NULL){
-  #TODO: check bootstrap samples exists
 
   stopifnot("Object must have more than 1 timepoint" = length(object$times) > 1)
 
@@ -29,38 +28,42 @@ simultaneous_ci <- function(object, alpha, seed = NULL){
   excluded_timepoints <- lapply(z_star_results, \(x) as.numeric(x$excluded_timepoint))
   #print(z_star)
 
-  #compute ci for each timepoint
-  pt_est <- object$estimates
+   #compute ci for each timepoint
+   estimates <- object$estimates
+   pt_est <- lapply(estimates, \(x) x[,"estimate"])
 
 
-  risk_0_ci <- compute_wald_ci(x = pt_est[[1]][,"estimate"],
+  risk_0_ci <- compute_wald_ci(x = pt_est[[1]],
                                      boot_x = boot_samples[[1]],
                                      transform = "logit",
                                      z_star = z_star[1])
 
-  risk_1_ci <- compute_wald_ci(x = pt_est[[2]][,"estimate"],
+  risk_1_ci <- compute_wald_ci(x = pt_est[[2]],
                                      boot_x = boot_samples[[2]],
                                      transform = "logit",
                                      z_star = z_star[2])
 
-  ve_ci <- compute_wald_ci(x = pt_est[[3]][,"estimate"],
+  ve_ci <- compute_wald_ci(x = pt_est[[3]],
                                  boot_x = boot_samples[[3]],
                                  transform = "log_ve",
                                  z_star = z_star[3])
 
-  ci_list <- list("risk_0" = risk_0_ci, "risk_1" = risk_1_ci, "ve" =ve_ci)
+  ci_estimates <- list(risk_0 = cbind(estimate = pt_est[[1]],  risk_0_ci),
+                    risk_1 = cbind(estimate = pt_est[[2]],  risk_1_ci),
+                        ve = cbind(estimate = pt_est[[3]],  ve_ci))
+
   #rename wald to simultaneous
-  estimates <- lapply(seq_along(ci_list), \(i){
-    x <- ci_list[[i]]
+  result <- lapply(seq_along(ci_estimates), \(i){
+    x <- ci_estimates[[i]]
     # remove simultaneous CI estimates for excluded timepoints
     unused_times <- excluded_timepoints[[i]]
     x[rownames(x) %in% unused_times, ] <- NA
     colnames(x) <- gsub("wald", "simul", colnames(x))
-    x[, c("simul_lower", "simul_upper", "simul_n")]
+    x[, c("estimate", "simul_lower", "simul_upper", "simul_n")]
   })
-  names(estimates) <- names(ci_list)
+  names(result) <- names(ci_estimates)
 
-  list(estimates = estimates,
+  list(estimates = result,
        boot_samples = transformed_boot_samples,
        z_star = z_star,
        excluded_timepoints = excluded_timepoints)
@@ -68,13 +71,25 @@ simultaneous_ci <- function(object, alpha, seed = NULL){
 
 
 
+#' Calculate critical value to use for simultaneous confidence bands
+#'
+#' If bootstrap matrix contains NA values at certain timepoints,
+#' simultaneous confidence bands are only computed for timepoint regions where
+#' at least 95% of the expected bootstrap samples are available
+#'
+#' @param mat A matrix of bootstrap estimates for a single term where rows
+#' are bootstrap iterations and columns are time-points
+#' @param alpha Significance level for confidence interval
+#'
+#' @return A list containing the critical value (scalar) and any timepoints
+#' excluded from simultaneous confidence band region
+#' @noRd
 get_z_star <- function(mat, alpha ){
   #set infinite values to missing
   mat_clean <- mat
   mat_clean[is.infinite(mat)] <- NA
 
-  #remove columns with all missing
-
+  #remove columns with a large proportion of  missing estimates
   bad_inds <- which(apply(mat_clean, 2, \(x) sum(is.na(x))/length(x)) > .05)
 
 

@@ -44,6 +44,7 @@ compute_boot_ci <- function(x, boot_x, ci_type, alpha = .05, transform = NULL, z
 
 
 #' @rdname compute_boot_ci
+#' @export
 compute_wald_ci <- function(x, boot_x,  alpha = .05, transform, z_star = NULL){
     if(!is.null(z_star)){
         z_crit <- z_star
@@ -72,11 +73,14 @@ compute_wald_ci <- function(x, boot_x,  alpha = .05, transform, z_star = NULL){
     wald_ci
 }
 
+
+# Compute transformations for Wald confidence-intervals
 logit <- function(x){log(x/(1-x))}
 log_ve <- function(x){log(1-x)}
 
 
 #' @rdname compute_boot_ci
+#' @export
 compute_percentile_ci <- function(boot_x, alpha = .05){
     lower <- apply(boot_x, 2, \(x) stats::quantile(x, alpha/2, na.rm = TRUE))
     upper <- apply(boot_x, 2, \(x) stats::quantile(x, 1 - alpha/2, na.rm = TRUE))
