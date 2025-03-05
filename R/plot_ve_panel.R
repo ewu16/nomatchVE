@@ -6,9 +6,13 @@
 #'
 #' @return ggplot
 #' @export
-plot_ve_panel <- function(plot_data, ci_type){
+plot_ve_panel <- function(object, ci_type){
   lower <- paste0(ci_type, "_lower")
   upper <- paste0(ci_type, "_upper")
+
+
+  plot_data <- estimates_to_df(object$estimates)
+  stopifnot(c(lower, upper) %in% names(plot_data))
 
   plot_data$term_label <- factor(plot_data$term, c("risk_0", "risk_1", "ve"),
                                  c("Cumulative incidence: no vaccine",
