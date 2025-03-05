@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>Causal Estimand for Observational Vaccine Studies • obsve</title>
+<title>Causal Estimand for Observational Vaccine Studies • nomatchVE</title>
 <script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
 <script src="deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
@@ -20,7 +20,7 @@
 
     <nav class="navbar navbar-expand-lg fixed-top bg-light" data-bs-theme="light" aria-label="Site navigation"><div class="container">
 
-    <a class="navbar-brand me-2" href="index.html">obsve</a>
+    <a class="navbar-brand me-2" href="index.html">nomatchVE</a>
 
     <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9000</small>
 
@@ -45,8 +45,8 @@
 </nav><div class="container template-home">
 <div class="row">
   <main id="main" class="col-md-9"><div class="section level1">
-<div class="page-header"><h1 id="robsve">R/<code>obsve</code>
-<a class="anchor" aria-label="anchor" href="#robsve"></a>
+<div class="page-header"><h1 id="rnomatchve">R/<code>nomatchVE</code>
+<a class="anchor" aria-label="anchor" href="#rnomatchve"></a>
 </h1></div>
 <blockquote>
 <p>Estimate vaccine effectiveness in observational studies: a matching alternative</p>
@@ -56,23 +56,23 @@
 <div class="section level2">
 <h2 id="description">Description<a class="anchor" aria-label="anchor" href="#description"></a>
 </h2>
-<p>The <code>obsve</code> package uses a G-computation style estimator to compute vaccine efficacy from observational vaccine studies. The proposed estimator tends to produce similar point estimates as matching-based estimators but is more efficient.</p>
+<p>The <code>nomatchVE</code> package uses a G-computation style estimator to compute vaccine efficacy from observational vaccine studies. The proposed estimator tends to produce similar point estimates as matching-based estimators but is more efficient.</p>
 </div>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
-<p>You can install the development version of <code>obsve</code> like so:</p>
+<p>You can install the development version of <code>nomatchVE</code> like so:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># TODO: not yet available on Github </span></span>
 <span><span class="co"># install.packages("devtools")</span></span>
-<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"ewu16/obsve"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"ewu16/nomatchVE"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="example">Example<a class="anchor" aria-label="anchor" href="#example"></a>
 </h2>
-<p>This minimal example shows how to use <code>obsve</code> to obtain cumulative incidence and vaccine effectiveness estimates in a simple simulated data set.</p>
+<p>This minimal example shows how to use <code>nomatchVE</code> to obtain cumulative incidence and vaccine effectiveness estimates in a simple simulated data set.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ewu16.github.io/obsve/">obsve</a></span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ewu16.github.io/nomatchVE/">nomatchVE</a></span><span class="op">)</span></span>
 <span><span class="co"># Set seed for reproducibility </span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1234</span><span class="op">)</span></span>
 <span></span>
@@ -122,7 +122,7 @@
 <span><span class="co"># ------------------------------------------------------------------------------</span></span>
 <span><span class="co"># 2. Compute VE estimand at time points </span></span>
 <span></span>
-<span><span class="va">fit1</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/obsve.html">obsve</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">simdata</span>,</span>
+<span><span class="va">fit1</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/nomatchVE.html">nomatchVE</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">simdata</span>,</span>
 <span>              outcome_name <span class="op">=</span> <span class="va">outcome_name</span>,</span>
 <span>              event_name <span class="op">=</span> <span class="va">event_name</span>,</span>
 <span>              trt_name <span class="op">=</span> <span class="va">trt_name</span>,</span>
@@ -135,7 +135,7 @@
 <span>              n_boot <span class="op">=</span> <span class="va">n_boot</span>, </span>
 <span>              alpha <span class="op">=</span> <span class="va">alpha</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Bootstrapping...</span></span>
-<span><span class="co">#&gt; Time difference of 1.20295 secs</span></span>
+<span><span class="co">#&gt; Time difference of 1.170502 secs</span></span>
 <span>             </span>
 <span><span class="va">fit1</span><span class="op">$</span><span class="va">estimates</span></span>
 <span><span class="co">#&gt; $risk_0</span></span>
@@ -239,7 +239,7 @@
 <span>                           n_boot <span class="op">=</span> <span class="va">n_boot</span>,</span>
 <span>                           alpha <span class="op">=</span> <span class="va">alpha</span><span class="op">)</span> </span>
 <span><span class="co">#&gt; Bootstrapping...</span></span>
-<span><span class="co">#&gt; Time difference of 0.7637088 secs</span></span>
+<span><span class="co">#&gt; Time difference of 0.7738459 secs</span></span>
 <span>   </span>
 <span></span>
 <span><span class="co">## Proposed and matching based estimators have similar point estimates</span></span>
@@ -312,7 +312,7 @@
 <div class="citation">
 <h2 data-toc-skip>Citation</h2>
 <ul class="list-unstyled">
-<li><a href="authors.html#citation">Citing obsve</a></li>
+<li><a href="authors.html#citation">Citing nomatchVE</a></li>
 </ul>
 </div>
 
