@@ -93,17 +93,12 @@ during follow-up.</p></dd>
 
 <dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
 <dd><p>Character string specifying method for survival estimation ("cox" for
-cox proportional hazards model or "km" for kaplan meier estimation)</p></dd>
+Cox proportional hazards regression model or "km" for Kaplan-Meier estimation)</p></dd>
 
 
 <dt id="arg-adjust">adjust<a class="anchor" aria-label="anchor" href="#arg-adjust"></a></dt>
 <dd><p>If <code>method = "cox"</code>, a formula or  character vector containing the names of covariates in
 <code>matched_data</code> to adjust for.</p></dd>
-
-
-<dt id="arg-times">times<a class="anchor" aria-label="anchor" href="#arg-times"></a></dt>
-<dd><p>A numeric vector containing the times (relative to time of vaccination) at which to return
-the cumulative incidence estimates.</p></dd>
 
 
 <dt id="arg-censor-time">censor_time<a class="anchor" aria-label="anchor" href="#arg-censor-time"></a></dt>
@@ -122,7 +117,7 @@ when unvaccinated pair becomes vaccinated.</p></dd>
 
 
 <dt id="arg-separate">separate<a class="anchor" aria-label="anchor" href="#arg-separate"></a></dt>
-<dd><p>If <code>TRUE</code>, models are fit in the treated and untreated groups separately.</p></dd>
+<dd><p>If <code>method = cox</code> and <code>separate = TRUE</code>, Cox regression models are fit in the treated and untreated groups separately.</p></dd>
 
 
 <dt id="arg-return-models">return_models<a class="anchor" aria-label="anchor" href="#arg-return-models"></a></dt>

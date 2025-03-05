@@ -93,14 +93,21 @@ during follow-up.</p></dd>
 
 <dt id="arg-adjust-vars">adjust_vars<a class="anchor" aria-label="anchor" href="#arg-adjust-vars"></a></dt>
 <dd><p>A character vector containing the names of variables in
-<code>data</code> to adjust for.</p></dd>
+<code>data</code> to adjust for.
+#' @param times A numeric vector containing the times (relative to time of vaccination) at which to return
+the cumulative incidence estimates.</p></dd>
 
 
 <dt id="arg-marginalizing-dist">marginalizing_dist<a class="anchor" aria-label="anchor" href="#arg-marginalizing-dist"></a></dt>
-<dd><p>Character string describing the type of estimated
-day/covariate distributions to marginalize over. Values are "observed" or
-"matched". Alternatively, for pre-specified marginalizing distributions can
-be a list of 2 dataframes named <code>g_dist</code> and <code>p_dist</code>.</p></dd>
+<dd><p>Generally, should be set to "observed", the default value,
+which estimates the marginalizing distributions based on the observed data.
+For historical purposes, marginalizing_dist can also be set to "matched", which uses the marginalizing distributions
+of a matched dataset and requires use of the <code>matched_dist_options</code> argument.
+To providing a fixed choice of marginalizing weight functions, <code>marginalizing_dist</code>
+should be a list of 2 dataframes named <code>g_dist</code> and <code>p_dist</code>. <code>g_dist</code> must be a dataframe with the columns
+&lt;time_name&gt; describing the time of vaccination, all variables in <adjust> , <code>group_name</code> identifying
+each unique covariate group, and <code>prob</code> for the corresponding probability. <code>p_dist</code> must be a dataframe with
+all variables in <adjust> and variable <code>prob</code> for the corresponding probability.</adjust></adjust></p></dd>
 
 
 <dt id="arg-matched-dist-options">matched_dist_options<a class="anchor" aria-label="anchor" href="#arg-matched-dist-options"></a></dt>
@@ -108,11 +115,6 @@ be a list of 2 dataframes named <code>g_dist</code> and <code>p_dist</code>.</p>
 parameters controlling process of creating matched cohort and matched analysis
 dataset from which marginalizing distributions will be estimated. List
 can be created by <code><a href="matched_dist.html">matched_dist()</a></code>.</p></dd>
-
-
-<dt id="arg-times">times<a class="anchor" aria-label="anchor" href="#arg-times"></a></dt>
-<dd><p>A numeric vector containing the times (relative to time of vaccination) at which to return
-the cumulative incidence estimates.</p></dd>
 
 
 <dt id="arg-censor-time">censor_time<a class="anchor" aria-label="anchor" href="#arg-censor-time"></a></dt>

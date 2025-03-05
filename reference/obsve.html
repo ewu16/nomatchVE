@@ -44,15 +44,15 @@
 <span>  <span class="va">trt_name</span>,</span>
 <span>  <span class="va">time_name</span>,</span>
 <span>  <span class="va">adjust_vars</span>,</span>
-<span>  <span class="va">marginalizing_dist</span>,</span>
-<span>  matched_dist_options <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">times</span>,</span>
 <span>  censor_time <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">times</span><span class="op">)</span>,</span>
 <span>  tau <span class="op">=</span> <span class="fl">14</span>,</span>
 <span>  ci_type <span class="op">=</span> <span class="st">"wald"</span>,</span>
-<span>  limit_type <span class="op">=</span> <span class="st">"fixed"</span>,</span>
+<span>  limit_type <span class="op">=</span> <span class="st">"limit"</span>,</span>
 <span>  n_boot <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  alpha <span class="op">=</span> <span class="fl">0.05</span>,</span>
+<span>  marginalizing_dist <span class="op">=</span> <span class="st">"observed"</span>,</span>
+<span>  matched_dist_options <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  formula_0 <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  formula_1 <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  return_models <span class="op">=</span> <span class="cn">TRUE</span>,</span>
@@ -94,25 +94,8 @@ during follow-up.</p></dd>
 
 <dt id="arg-adjust-vars">adjust_vars<a class="anchor" aria-label="anchor" href="#arg-adjust-vars"></a></dt>
 <dd><p>A character vector containing the names of variables in
-<code>data</code> to adjust for.</p></dd>
-
-
-<dt id="arg-marginalizing-dist">marginalizing_dist<a class="anchor" aria-label="anchor" href="#arg-marginalizing-dist"></a></dt>
-<dd><p>Character string describing the type of estimated
-day/covariate distributions to marginalize over. Values are "observed" or
-"matched". Alternatively, for pre-specified marginalizing distributions can
-be a list of 2 dataframes named <code>g_dist</code> and <code>p_dist</code>.</p></dd>
-
-
-<dt id="arg-matched-dist-options">matched_dist_options<a class="anchor" aria-label="anchor" href="#arg-matched-dist-options"></a></dt>
-<dd><p>If <code>marginalizing_dist == "matched"</code>, a list of
-parameters controlling process of creating matched cohort and matched analysis
-dataset from which marginalizing distributions will be estimated. List
-can be created by <code><a href="matched_dist.html">matched_dist()</a></code>.</p></dd>
-
-
-<dt id="arg-times">times<a class="anchor" aria-label="anchor" href="#arg-times"></a></dt>
-<dd><p>A numeric vector containing the times (relative to time of vaccination) at which to return
+<code>data</code> to adjust for.
+#' @param times A numeric vector containing the times (relative to time of vaccination) at which to return
 the cumulative incidence estimates.</p></dd>
 
 
@@ -132,10 +115,9 @@ to return ("wald", "percentile", "both")</p></dd>
 
 
 <dt id="arg-limit-type">limit_type<a class="anchor" aria-label="anchor" href="#arg-limit-type"></a></dt>
-<dd><p>Character string indicating whether the marginalizing
-distributions of interest are the estimated distributions in the "limit"
-or "fixed" sense. For a prespecified marginalizing_dist, limit_type is
-always fixed.</p></dd>
+<dd><p>Generally, should be set to "limit", the default value.  For historical purposes,
+<code>limit_type</code> can also be set to fixed, which treats the marginalizing distributions as
+fixed. For a prespecified marginalizing_dist, <code>limit_type</code> is always fixed.</p></dd>
 
 
 <dt id="arg-n-boot">n_boot<a class="anchor" aria-label="anchor" href="#arg-n-boot"></a></dt>
@@ -146,6 +128,25 @@ intervals</p></dd>
 <dt id="arg-alpha">alpha<a class="anchor" aria-label="anchor" href="#arg-alpha"></a></dt>
 <dd><p>Significance level used to compute confidence intervals.
 Confidence intervals have nominal level <code>1 - alpha</code>.</p></dd>
+
+
+<dt id="arg-marginalizing-dist">marginalizing_dist<a class="anchor" aria-label="anchor" href="#arg-marginalizing-dist"></a></dt>
+<dd><p>Generally, should be set to "observed", the default value,
+which estimates the marginalizing distributions based on the observed data.
+For historical purposes, marginalizing_dist can also be set to "matched", which uses the marginalizing distributions
+of a matched dataset and requires use of the <code>matched_dist_options</code> argument.
+To providing a fixed choice of marginalizing weight functions, <code>marginalizing_dist</code>
+should be a list of 2 dataframes named <code>g_dist</code> and <code>p_dist</code>. <code>g_dist</code> must be a dataframe with the columns
+&lt;time_name&gt; describing the time of vaccination, all variables in <adjust> , <code>group_name</code> identifying
+each unique covariate group, and <code>prob</code> for the corresponding probability. <code>p_dist</code> must be a dataframe with
+all variables in <adjust> and variable <code>prob</code> for the corresponding probability.</adjust></adjust></p></dd>
+
+
+<dt id="arg-matched-dist-options">matched_dist_options<a class="anchor" aria-label="anchor" href="#arg-matched-dist-options"></a></dt>
+<dd><p>If <code>marginalizing_dist == "matched"</code>, a list of
+parameters controlling process of creating matched cohort and matched analysis
+dataset from which marginalizing distributions will be estimated. List
+can be created by <code><a href="matched_dist.html">matched_dist()</a></code>.</p></dd>
 
 
 <dt id="arg-formula-">formula_0<a class="anchor" aria-label="anchor" href="#arg-formula-"></a></dt>
@@ -179,7 +180,7 @@ Each matrix contains the point estimate and confidence intervals for the specifi
 
 <dt>gp_list</dt>
 <dd><p>A list containing the distributions g(d|x) and p(x) used for marginalization</p></dd>
-
+.
 <dt>model_0</dt>
 <dd><p>The fit object used to predict risk for unvaccinated group</p></dd>
 

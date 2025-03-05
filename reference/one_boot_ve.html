@@ -92,19 +92,21 @@ during follow-up.</p></dd>
 
 <dt id="arg-adjust-vars">adjust_vars<a class="anchor" aria-label="anchor" href="#arg-adjust-vars"></a></dt>
 <dd><p>A character vector containing the names of variables in
-<code>data</code> to adjust for.</p></dd>
+<code>data</code> to adjust for.
+#' @param times A numeric vector containing the times (relative to time of vaccination) at which to return
+the cumulative incidence estimates.</p></dd>
 
 
 <dt id="arg-marginalizing-dist">marginalizing_dist<a class="anchor" aria-label="anchor" href="#arg-marginalizing-dist"></a></dt>
-<dd><p>Character string describing the type of estimated
-day/covariate distributions to marginalize over. Values are "observed" or
-"matched". Alternatively, for pre-specified marginalizing distributions can
-be a list of 2 dataframes named <code>g_dist</code> and <code>p_dist</code>.</p></dd>
-
-
-<dt id="arg-times">times<a class="anchor" aria-label="anchor" href="#arg-times"></a></dt>
-<dd><p>A numeric vector containing the times (relative to time of vaccination) at which to return
-the cumulative incidence estimates.</p></dd>
+<dd><p>Generally, should be set to "observed", the default value,
+which estimates the marginalizing distributions based on the observed data.
+For historical purposes, marginalizing_dist can also be set to "matched", which uses the marginalizing distributions
+of a matched dataset and requires use of the <code>matched_dist_options</code> argument.
+To providing a fixed choice of marginalizing weight functions, <code>marginalizing_dist</code>
+should be a list of 2 dataframes named <code>g_dist</code> and <code>p_dist</code>. <code>g_dist</code> must be a dataframe with the columns
+&lt;time_name&gt; describing the time of vaccination, all variables in <adjust> , <code>group_name</code> identifying
+each unique covariate group, and <code>prob</code> for the corresponding probability. <code>p_dist</code> must be a dataframe with
+all variables in <adjust> and variable <code>prob</code> for the corresponding probability.</adjust></adjust></p></dd>
 
 
 <dt id="arg-censor-time">censor_time<a class="anchor" aria-label="anchor" href="#arg-censor-time"></a></dt>
@@ -137,10 +139,9 @@ the marginalizing distributions to use.</p></dd>
 
 
 <dt id="arg-limit-type">limit_type<a class="anchor" aria-label="anchor" href="#arg-limit-type"></a></dt>
-<dd><p>Character string indicating whether the marginalizing
-distributions of interest are the estimated distributions in the "limit"
-or "fixed" sense. For a prespecified marginalizing_dist, limit_type is
-always fixed.</p></dd>
+<dd><p>Generally, should be set to "limit", the default value.  For historical purposes,
+<code>limit_type</code> can also be set to fixed, which treats the marginalizing distributions as
+fixed. For a prespecified marginalizing_dist, <code>limit_type</code> is always fixed.</p></dd>
 
 </dl></div>
     <div class="section level2">
