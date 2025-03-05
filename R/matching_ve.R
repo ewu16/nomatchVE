@@ -6,13 +6,13 @@
 #' @inheritParams clean_matched_data
 #' @param matched_data A data frame for the matched cohort
 #' @param method Character string specifying method for survival estimation ("cox" for
-#' cox proportional hazards model or "km" for kaplan meier estimation)
+#' Cox proportional hazards regression model or "km" for Kaplan-Meier estimation)
 #' @param adjust If `method = "cox"`, a formula or  character vector containing the names of covariates in
 #' `matched_data` to adjust for.
-#' @param separate  If `TRUE`, models are fit in the treated and untreated groups separately.
-#' @param limit_type If `limit_type = "limit", the matching procedure is performed in each
-#' bootstrap iteration. If `limit_type = "fixed"`, bootstrap samples are formed from the
-#' original matched data set.
+#' @param separate  If `method = cox` and `separate = TRUE`, Cox regression models are fit in the treated and untreated groups separately.
+#' @param limit_type The default value is `limit_type = "fixed"`, wherein bootstrap samples are formed from the
+#' original matched data set. If `limit_type = "limit", the matching procedure is performed in each
+#' bootstrap iteration.
 #' @param data If `limit_type = "limit"`, the original data used to constructed the matched cohort
 #' @param id_name  If `limit_type = "limit"`, character string representing the individual identifier variable  in `data`
 #' @param matching_vars  If `limit_type = "limit"`, a character vector containing the names of variables in `data` to match on.
@@ -36,24 +36,32 @@ matching_ve <- function(matched_data,
                         event_name,
                         trt_name,
                         time_name,
-                        method,
-                        adjust,
+                        method = "km",
+                        adjust = NULL,
+                        pair_censoring = TRUE,
+                        separate = TRUE,
                         times,
                         censor_time,
                         tau,
-                        pair_censoring = TRUE,
-                        separate = TRUE,
                         ci_type = "wald",
+                        n_boot = 0,
+                        alpha = 0.05,
                         limit_type = "fixed",
                         data = NULL,
                         id_name = "ID",
                         matching_vars = NULL,
                         replace = FALSE,
-                        n_boot = 0,
-                        alpha = 0.05,
                         return_models = TRUE,
                         return_boot = TRUE,
                         n_cores = 1){
+
+
+    # Check data/inputs
+    stopifnot("<outcome_name> not in data" = outcome_name %in% names(matched_data))
+    stopifnot("<event_name>  not in data" = event_name %in% names(matched_data))
+    stopifnot("<trt_name> not in data" = trt_name %in% names(matched_data))
+    stopifnot("<time_name> not in data" = trt_name %in% names(matched_data))
+
 
     # --------------------------------------------------------------------------
     # 1 - Get original estimate
@@ -117,8 +125,8 @@ matching_ve <- function(matched_data,
     }
 
     #for debugging
-    out$original <- original
-    out$one_boot_args <- boot_inference$one_boot_args
+    #out$original <- original
+    #out$one_boot_args <- boot_inference$one_boot_args
 
 
     return(out)

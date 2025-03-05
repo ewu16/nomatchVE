@@ -16,30 +16,34 @@
 #'   during follow-up.
 #' @param adjust_vars A character vector containing the names of variables in
 #'   `data` to adjust for.
-#' @param marginalizing_dist Character string describing the type of estimated
-#'   day/covariate distributions to marginalize over. Values are "observed" or
-#'   "matched". Alternatively, for pre-specified marginalizing distributions can
-#'   be a list of 2 dataframes named `g_dist` and `p_dist`.
-#' @param matched_dist_options If `marginalizing_dist == "matched"`, a list of
-#'   parameters controlling process of creating matched cohort and matched analysis
-#'   dataset from which marginalizing distributions will be estimated. List
-#'   can be created by [matched_dist()].
-#' @param times A numeric vector containing the times (relative to time of vaccination) at which to return
+#'#' @param times A numeric vector containing the times (relative to time of vaccination) at which to return
 #'   the cumulative incidence estimates.
 #' @param censor_time The time at which vaccinated individuals are censored during model fitting.
 #'    By default, this is set to `max(times)`.
 #' @param tau The time excluded after vaccination to allow building up of
 #'   immunity
+#' @param marginalizing_dist Generally, should be set to "observed", the default value,
+#'  which estimates the marginalizing distributions based on the observed data.
+#'  For historical purposes, marginalizing_dist can also be set to "matched", which uses the marginalizing distributions
+#'  of a matched dataset and requires use of the `matched_dist_options` argument.
+#'  To providing a fixed choice of marginalizing weight functions, `marginalizing_dist`
+#'  should be a list of 2 dataframes named `g_dist` and `p_dist`. `g_dist` must be a dataframe with the columns
+#'   <time_name> describing the time of vaccination, all variables in <adjust> , `group_name` identifying
+#'   each unique covariate group, and `prob` for the corresponding probability. `p_dist` must be a dataframe with
+#'   all variables in <adjust> and variable `prob` for the corresponding probability.
+#' @param matched_dist_options If `marginalizing_dist == "matched"`, a list of
+#'   parameters controlling process of creating matched cohort and matched analysis
+#'   dataset from which marginalizing distributions will be estimated. List
+#'   can be created by [matched_dist()].
 #' @param formula_0 A formula or pre-fit model for estimating hazards in
 #'   unvaccinated group (recommended for use only by power users)
 #' @param formula_1 A formula or pre-fit model for estimating hazards in
 #'   vaccinated group. (recommended for use only by power users)
 #' @param ci_type Character string indicating which type of confidence interval
 #'   to return ("wald", "percentile", "both")
-#' @param limit_type Character string indicating whether the marginalizing
-#'   distributions of interest are the estimated distributions in the "limit"
-#'   or "fixed" sense. For a prespecified marginalizing_dist, limit_type is
-#'   always fixed.
+#' @param limit_type Generally, should be set to "limit", the default value.  For historical purposes,
+#'   `limit_type` can also be set to fixed, which treats the marginalizing distributions as
+#'   fixed. For a prespecified marginalizing_dist, `limit_type` is always fixed.
 #' @param n_boot Number of bootstrap replicated used to compute confidence
 #'   intervals
 #' @param alpha Significance level used to compute confidence intervals.
@@ -53,23 +57,13 @@
 #' \describe{
 #'  \item{estimates}{A list of matrices for cumulative incidences and VE.
 #'  Each matrix contains the point estimate and confidence intervals for the specified term.}
-#'  \item{gp_list}{A list containing the distributions g(d|x) and p(x) used for marginalization}
+#'  \item{gp_list}{A list containing the distributions g(d|x) and p(x) used for marginalization}.
 #'  \item{model_0}{The fit object used to predict risk for unvaccinated group}
 #'  \item{model_1}{The fit object used to predict risk for vaccinated group}
- # \item{outcome_name}{Name of the outcome variable used}
- # \item{event_name}{Name of the event variable used}
- # \item{trt_name}{Name of the vaccine status variable used}
- # \item{time_name}{Name of the vaccination timing variable used}
- # \item{adjust_vars}{Name(s) of covariates adjusted for}
- # \item{t0}{The timepoint at which VE was computed and vaccinated individuals were censored
- # \item{tau}{The delay period for assessing vaccination}
- # \item{n_boot}{The number of bootstrap replicates requested}
 #'  \item{n_success_boot}{A numeric vector of the number of successful bootstrap samples for each time point.(Success bootstrap samples are
 #'  those that result in non-missing valid point estimates.)}
 #'  \item{boot_samples}{If `return_boot = TRUE`, a list of matrices for each term that contain the bootstrap estimates where the rows are the bootstrap iterations and
 #'  the columns are the time points.}
- # \item{alpha}{Significance level of confidence intervals returned}
- # \item{call}{The call to `obsve`}
 #' }
 
 
@@ -86,15 +80,15 @@ obsve <- function(data,
                   trt_name,
                   time_name,
                   adjust_vars,
-                  marginalizing_dist,
-                  matched_dist_options = NULL,
                   times,
                   censor_time = max(times),
                   tau = 14,
                   ci_type = "wald",
-                  limit_type = "fixed",
+                  limit_type = "limit",
                   n_boot = 0,
                   alpha = 0.05,
+                  marginalizing_dist = "observed",
+                  matched_dist_options = NULL,
                   formula_0 = NULL,
                   formula_1 = NULL,
                   return_models = TRUE,
@@ -109,7 +103,25 @@ obsve <- function(data,
     # --------------------------------------------------------------------------
 
      # Check data/inputs
-     ## TODO
+     stopifnot("<outcome_name> not in data" = outcome_name %in% names(data))
+     stopifnot("<event_name>  not in data" = event_name %in% names(data))
+     stopifnot("<trt_name> not in data" = trt_name %in% names(data))
+     stopifnot("<time_name> not in data" = trt_name %in% names(data))
+     stopifnot("<adjust_vars> not in data" = adjust_vars %in% names(data))
+
+     #check marginalizing_dist is proper gp_list?
+     if(is.list(marginalizing_dist)){
+         stopifnot(names(marginalizing_dist) %in% c("g_dist", "p_dist"))
+         stopifnot("group_name" %in% names(marginalizing_dist$g_dist))
+         stopifnot(time_name %in% names(marginalizing_dist$g_dist))
+         stopifnot(adjust_vars %in% names(marginalizing_dist$g_dist))
+         stopifnot(adjust_vars %in% names(marginalizing_dist$p_dist))
+         stopifnot("weighted in g_dist must add to 1 for each covariate group" =
+                    all.equal(unname(sapply(split(marginalizing_dist$g_dist, marginalizing_dist$g_dist$group_name), \(x) sum(x$prob))),
+                              rep(1, length(unique(marginalizing_dist$g_dist$group_name)))))
+         stopifnot("weights in p_dist must add to 1" = sum(marginalizing_dist$p_dist$prob) == 1)
+
+     }
 
      if(!is.list(marginalizing_dist) && marginalizing_dist == "matched"){
         stopifnot("must provide matched_dist_options argument" = !is.null(matched_dist_options))
@@ -222,8 +234,8 @@ obsve <- function(data,
     }
 
      #for debugging
-     out$original <- original
-     out$one_boot_args <- boot_inference$one_boot_args
+     #out$original <- original
+     #out$one_boot_args <- boot_inference$one_boot_args
 
 
     return(out)
