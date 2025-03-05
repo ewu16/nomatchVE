@@ -3,7 +3,7 @@
 #' @description This function computes Wald and percentile bootstrapped confidence
 #' intervals for the proposed VE estimator.
 #'
-#' @inheritParams obsve
+#' @inheritParams nomatchVE
 #' @param one_boot_function_name Character string naming the function that computes
 #' one bootstrap iteration of estimates
 #' @param one_boot_args List of arguments to pass to the function that computes

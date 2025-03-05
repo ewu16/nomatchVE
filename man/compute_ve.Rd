@@ -16,6 +16,9 @@ compute_ve(fit_0, fit_1, time_name, times, tau, gp_list)
 variable in \code{data}. Vaccination time should be NA if never received vaccine
 during follow-up.}
 
+\item{times}{A numeric vector containing the times (relative to time of vaccination) at which to return
+the cumulative incidence estimates.}
+
 \item{tau}{The time excluded after vaccination to allow building up of
 immunity}
 

@@ -6,7 +6,7 @@
 #' wrapper around `compute_ve_t0()`.
 #'
 #' @inheritParams compute_psi_d
-#' @inheritParams obsve
+#' @inheritParams nomatchVE
 #'
 #' @return A matrix of estimates where the columns are the terms `risk_0, risk_1`, and `ve`
 #' and the rows are the time points of interest.
@@ -26,7 +26,7 @@ compute_ve <- function(fit_0, fit_1, time_name, times, tau, gp_list){
 #' time points of interest
 #'
 #' @inheritParams compute_psi_d
-#' @inheritParams obsve
+#' @inheritParams nomatchVE
 #'
 #' @return A named numeric vector containing point estimates for
 #'  `risk_0, risk_1`, and `ve`

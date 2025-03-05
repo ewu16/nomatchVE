@@ -7,10 +7,10 @@
 plot_ve_panel(object, ci_type)
 }
 \arguments{
+\item{object}{An object returned from a call to \code{\link[=nomatchVE]{nomatchVE()}}, \code{\link[=matching_ve]{matching_ve()}} or \code{\link[=simultaneous_ci]{simultaneous_ci()}}}
+
 \item{ci_type}{String indicating type of confidence interval to plot.
 Takes values of  "wald", "percentile" or "simul".}
-
-\item{plot_data}{A dataframe}
 }
 \value{
 ggplot

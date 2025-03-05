@@ -59,6 +59,9 @@ when unvaccinated pair becomes vaccinated.}
 
 \item{separate}{If \code{method = cox} and \code{separate = TRUE}, Cox regression models are fit in the treated and untreated groups separately.}
 
+\item{times}{A numeric vector containing the times (relative to time of vaccination) at which to return
+the cumulative incidence estimates.}
+
 \item{censor_time}{The time at which vaccinated individuals are censored during model fitting.
 By default, this is set to \code{max(times)}.}
 

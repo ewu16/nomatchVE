@@ -1,6 +1,6 @@
 #' Estimate bootstrapped confidence intervals for proposed VE estimator
 #'
-#' @inheritParams obsve
+#' @inheritParams nomatchVE
 #' @param boot_formula_0 A formula for estimating hazards in
 #'   unvaccinated group for bootstrap samples (not a model)
 #' @param boot_formula_1 A formula for estimating hazards in

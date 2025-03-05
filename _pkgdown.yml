@@ -1,9 +1,9 @@
-url: https://ewu16.github.io/obsve/
+url: https://ewu16.github.io/nomatchVE/
 template:
   bootstrap: 5
 reference:
 - title: Proposed method
-  contents: obsve
+  contents: nomatchVE
 - subtitle: Estimation
   contents:
   - get_one_ve

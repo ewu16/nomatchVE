@@ -5,7 +5,7 @@
 #' `get_observed_gp` returns marginalizing distributions  based on the original observed data
 #' `get_matching_gp` returns marginalizing distributions based on the matched-analysis data
 #'
-#' @inheritParams obsve
+#' @inheritParams nomatchVE
 #' @return A list of two data frames containing the marginalizing distributions returned from calls to [get_gp()]
 #' @export
 #'
@@ -34,7 +34,7 @@ get_matching_gp <- function(matched_adata, outcome_name, trt_name,
 
 #' Get empirical probability distributions g(d|x) and p(x) based on input data
 #'
-#' @inheritParams  obsve
+#' @inheritParams  nomatchVE
 #' @param df A data frame representing the target population for the estimated distributions
 #' * typically, population involves the "analysis-eligible" subset of a given data source
 #'

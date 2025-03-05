@@ -3,7 +3,7 @@
 #' @description Given the fitted survival models, compute estimates of psi_v(t0; d, x)
 #' for all d,x of interest at a given timepoint t0
 #'
-#' @inheritParams obsve
+#' @inheritParams nomatchVE
 #' @param t0 A timepoint at which cumulative incidence should be evaluated
 #' @param fit_0 A fitted survival model for the unvaccinated group
 #' @param fit_1 A fitted survival model for the vaccinated group

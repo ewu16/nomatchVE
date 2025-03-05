@@ -24,6 +24,9 @@ time should be the time to event from vaccination/matched index date}
 
 \item{adata_trt_name}{Character string specifying the treatment variable in \code{adata}}
 
+\item{times}{A numeric vector containing the times (relative to time of vaccination) at which to return
+the cumulative incidence estimates.}
+
 \item{return_models}{Logical value: Should fitted survival models be returned?}
 }
 \value{

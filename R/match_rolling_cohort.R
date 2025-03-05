@@ -4,7 +4,7 @@
 #'    Individuals are eligible to be selected as unvaccinated "controls" only if they
 #'    are unvaccinated and endpoint free on the potential matching date
 #'
-#' @inheritParams obsve
+#' @inheritParams nomatchVE
 #' @param data A data frame for which matches are sought
 #' @param id_name Character string specifying name of a unique individual
 #'   identifier in `data`.

@@ -1,4 +1,4 @@
-Package: obsve
+Package: nomatchVE
 Title: Causal Estimand for Observational Vaccine Studies 
 Version: 0.0.0.9000
 Authors@R: 
@@ -25,4 +25,4 @@ Imports:
     ggplot2,
     scales
 VignetteBuilder: knitr
-URL: https://ewu16.github.io/obsve/
+URL: https://ewu16.github.io/nomatchVE/

@@ -2,7 +2,7 @@
 #'
 #' @description This function is the main function for computing a matching-based estimator.
 #'
-#' @inheritParams obsve
+#' @inheritParams nomatchVE
 #' @inheritParams clean_matched_data
 #' @param matched_data A data frame for the matched cohort
 #' @param method Character string specifying method for survival estimation ("cox" for

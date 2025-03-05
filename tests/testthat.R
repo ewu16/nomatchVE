@@ -7,6 +7,6 @@
 # * https://testthat.r-lib.org/articles/special-files.html
 
 library(testthat)
-library(obsve)
+library(nomatchVE)
 
-test_check("obsve")
+test_check("nomatchVE")

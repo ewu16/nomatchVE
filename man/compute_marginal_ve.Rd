@@ -28,6 +28,9 @@ time should be the time to event from vaccination/matched index date}
 
 \item{adata_trt_name}{Character string specifying the treatment variable in \code{adata}}
 
+\item{times}{A numeric vector containing the times (relative to time of vaccination) at which to return
+the cumulative incidence estimates.}
+
 \item{method}{Character string specifying method for survival estimation ("cox" for
 Cox proportional hazards regression model or "km" for Kaplan-Meier estimation)}
 

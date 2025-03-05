@@ -1,9 +1,9 @@
 #' Compute VE point estimate
 #'
 #' @description This function computes point estimates of vaccine effectiveness
-#' based on the proposed method. Internally called by [obsve] and [one_boot_ve].
+#' based on the proposed method. Internally called by [nomatchVE] and [one_boot_ve].
 #'
-#' @inheritParams obsve
+#' @inheritParams nomatchVE
 #' @param return_models Logical:  Should survival models be returned?
 #' @param return_gp_list Logical: Should marginalizing distributions be returned?
 #' @param return_matching Logical: Should matched datasets be returned? Default is

@@ -1,6 +1,6 @@
 #' Fit survival models to estimate hazards and predict risk
 #'
-#' @inheritParams obsve
+#' @inheritParams nomatchVE
 #'
 #' @description
 #' `fit_model_0()` fits a Cox model to estimate risk for unvaccinated individuals

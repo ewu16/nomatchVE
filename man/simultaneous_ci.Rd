@@ -7,7 +7,7 @@
 simultaneous_ci(object, alpha, seed = NULL)
 }
 \arguments{
-\item{object}{Object created by call to \code{\link[=obsve]{obsve()}} or \code{\link[=matching_ve]{matching_ve()}}}
+\item{object}{Object created by call to \code{\link[=nomatchVE]{nomatchVE()}} or \code{\link[=matching_ve]{matching_ve()}}}
 
 \item{alpha}{Significance level for confidence interval}
 

@@ -1,6 +1,6 @@
 #' Plot cumulative incidence/VE estimates
 #'
-#' @param plot_data A dataframe
+#' @param object An object returned from a call to [nomatchVE()], [matching_ve()] or [simultaneous_ci()]
 #' @param ci_type String indicating type of confidence interval to plot.
 #' Takes values of  "wald", "percentile" or "simul".
 #'

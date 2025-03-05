@@ -42,9 +42,7 @@ variable in \code{data}. Vaccination time should be NA if never received vaccine
 during follow-up.}
 
 \item{adjust_vars}{A character vector containing the names of variables in
-\code{data} to adjust for.
-#' @param times A numeric vector containing the times (relative to time of vaccination) at which to return
-the cumulative incidence estimates.}
+\code{data} to adjust for.}
 
 \item{marginalizing_dist}{Generally, should be set to "observed", the default value,
 which estimates the marginalizing distributions based on the observed data.
@@ -60,6 +58,9 @@ all variables in \if{html}{\out{<adjust>}} and variable \code{prob} for the corr
 parameters controlling process of creating matched cohort and matched analysis
 dataset from which marginalizing distributions will be estimated. List
 can be created by \code{\link[=matched_dist]{matched_dist()}}.}
+
+\item{times}{A numeric vector containing the times (relative to time of vaccination) at which to return
+the cumulative incidence estimates.}
 
 \item{censor_time}{The time at which vaccinated individuals are censored during model fitting.
 By default, this is set to \code{max(times)}.}
@@ -95,5 +96,5 @@ matched cohort}
 }
 \description{
 This function computes point estimates of vaccine effectiveness
-based on the proposed method. Internally called by \link{obsve} and \link{one_boot_ve}.
+based on the proposed method. Internally called by \link{nomatchVE} and \link{one_boot_ve}.
 }

@@ -16,7 +16,7 @@
 #'   during follow-up.
 #' @param adjust_vars A character vector containing the names of variables in
 #'   `data` to adjust for.
-#'#' @param times A numeric vector containing the times (relative to time of vaccination) at which to return
+#' @param times A numeric vector containing the times (relative to time of vaccination) at which to return
 #'   the cumulative incidence estimates.
 #' @param censor_time The time at which vaccinated individuals are censored during model fitting.
 #'    By default, this is set to `max(times)`.
@@ -53,7 +53,7 @@
 #' @param n_cores Number of cores to use to when running bootstrapping procedure. Passed as `mc.cores` argument to `parallel::mclapply`.
 #' If `n_cores > 1`, this parallelizes the bootstrapping procedure on Unix-like systems (not available on Windows).
 #'
-#' @return A list. In addition to information related to the call/arguments to `obsve`, contains the following:
+#' @return A list. In addition to information related to the call/arguments to `nomatchVE`, contains the following:
 #' \describe{
 #'  \item{estimates}{A list of matrices for cumulative incidences and VE.
 #'  Each matrix contains the point estimate and confidence intervals for the specified term.}
@@ -74,7 +74,7 @@
 
 
 
-obsve <- function(data,
+nomatchVE <- function(data,
                   outcome_name,
                   event_name,
                   trt_name,

@@ -1,6 +1,6 @@
 #' Compute simultaneous confidence intervals for timepoints object
 #'
-#' @param object Object created by call to [obsve()] or [matching_ve()]
+#' @param object Object created by call to [nomatchVE()] or [matching_ve()]
 #' @param alpha Significance level for confidence interval
 #' @param seed Seed for reproducibility
 #' @return A dataframe with lower and upper simultaneous confidence intervals for

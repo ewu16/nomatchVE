@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# R/`obsve`
+# R/`nomatchVE`
 
 > Estimate vaccine effectiveness in observational studies: a matching
 > alternative
@@ -12,29 +12,29 @@
 
 ## Description
 
-The `obsve` package uses a G-computation style estimator to compute
+The `nomatchVE` package uses a G-computation style estimator to compute
 vaccine efficacy from observational vaccine studies. The proposed
 estimator tends to produce similar point estimates as matching-based
 estimators but is more efficient.
 
 ## Installation
 
-You can install the development version of `obsve` like so:
+You can install the development version of `nomatchVE` like so:
 
 ``` r
 # TODO: not yet available on Github 
 # install.packages("devtools")
-devtools::install_github("ewu16/obsve")
+devtools::install_github("ewu16/nomatchVE")
 ```
 
 ## Example
 
-This minimal example shows how to use `obsve` to obtain cumulative
+This minimal example shows how to use `nomatchVE` to obtain cumulative
 incidence and vaccine effectiveness estimates in a simple simulated data
 set.
 
 ``` r
-library(obsve)
+library(nomatchVE)
 # Set seed for reproducibility 
 set.seed(1234)
 
@@ -84,7 +84,7 @@ alpha <- .05
 # ------------------------------------------------------------------------------
 # 2. Compute VE estimand at time points 
 
-fit1 <- obsve(data = simdata,
+fit1 <- nomatchVE(data = simdata,
               outcome_name = outcome_name,
               event_name = event_name,
               trt_name = trt_name,
@@ -97,7 +97,7 @@ fit1 <- obsve(data = simdata,
               n_boot = n_boot, 
               alpha = alpha)
 #> Bootstrapping...
-#> Time difference of 1.20295 secs
+#> Time difference of 1.170502 secs
              
 fit1$estimates
 #> $risk_0
@@ -207,7 +207,7 @@ fit_matching <-matching_ve(matched_data = matched_data,
                            n_boot = n_boot,
                            alpha = alpha) 
 #> Bootstrapping...
-#> Time difference of 0.7637088 secs
+#> Time difference of 0.7738459 secs
    
 
 ## Proposed and matching based estimators have similar point estimates
