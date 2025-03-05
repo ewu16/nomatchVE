@@ -26,7 +26,13 @@
 #'
 match_rolling_cohort <- function(data, outcome_name, trt_name, time_name, id_name, matching_vars, replace = FALSE, seed = NULL){
 
+    # Check data/inputs
+    stopifnot("<outcome_name> not in data" = outcome_name %in% names(data))
+    stopifnot("<event_name>  not in data" = event_name %in% names(data))
+    stopifnot("<trt_name> not in data" = trt_name %in% names(data))
+    stopifnot("<time_name> not in data" = trt_name %in% names(data))
     stopifnot("<id_name> is not a unique identifier for data" = !any(duplicated(data[[id_name]])))
+
     #set seed for reproducibility due to random matching
     if(!is.null(seed)){
         set.seed(seed)
