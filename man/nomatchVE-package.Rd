@@ -3,9 +3,9 @@
 \docType{package}
 \name{nomatchVE-package}
 \alias{nomatchVE-package}
-\title{nomatchVE: Causal Estimand for Observational Vaccine Studies}
+\title{nomatchVE: Estimate Causal Vaccine Effectiveness in Observational Studies Without Matching}
 \description{
-Functions to estimate vaccine efficacy in observational vaccine studies.
+Implements estimators for a proposed causal estimand of vaccine effectiveness using observational data.
 }
 \seealso{
 Useful links:

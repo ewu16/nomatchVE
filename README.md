@@ -3,8 +3,8 @@
 
 # R/`nomatchVE`
 
-> Estimate vaccine effectiveness in observational studies: a matching
-> alternative
+> A matching alternative for more efficiently evaluating vaccine
+> effectiveness using observational data
 
 <!-- badges: start -->
 
@@ -97,7 +97,7 @@ fit1 <- nomatchVE(data = simdata,
               n_boot = n_boot, 
               alpha = alpha)
 #> Bootstrapping...
-#> Time difference of 1.170502 secs
+#> Time difference of 1.168066 secs
              
 fit1$estimates
 #> $risk_0
@@ -207,7 +207,7 @@ fit_matching <-matching_ve(matched_data = matched_data,
                            n_boot = n_boot,
                            alpha = alpha) 
 #> Bootstrapping...
-#> Time difference of 0.7738459 secs
+#> Time difference of 0.7695818 secs
    
 
 ## Proposed and matching based estimators have similar point estimates
