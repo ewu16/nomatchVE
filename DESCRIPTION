@@ -1,10 +1,10 @@
 Package: nomatchVE
-Title: Causal Estimand for Observational Vaccine Studies 
+Title: Estimate Causal Vaccine Effectiveness in Observational Studies Without Matching
 Version: 0.0.0.9000
 Authors@R: 
     person("Emily", "Wu", , "first.last@example.com", role = c("aut", "cre"),
            comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: Functions to estimate vaccine efficacy in observational vaccine studies.
+Description: Implements estimators for a proposed causal estimand of vaccine effectiveness using observational data.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
