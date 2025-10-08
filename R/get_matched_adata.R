@@ -1,26 +1,3 @@
-#' Perform matching and get matched adata back
-#'
-#' @inheritParams match_rolling_cohort
-#' @inheritParams clean_matched_data
-#'
-#' @return A list containing the matched analysis dataset and the matched cohort
-#' @export
-#'
-match_adata <- function(data, outcome_name, event_name, trt_name, time_name, id_name,
-                              matching_vars,
-                              replace = FALSE, seed = NULL,
-                              tau, pair_censoring = TRUE){
-
-    matched_data <- match_rolling_cohort(data, outcome_name, trt_name, time_name, id_name,
-                                         matching_vars, replace, seed)[[1]]
-
-    matched_adata <- clean_matched_data(matched_data,
-                                        outcome_name, event_name, trt_name, time_name,
-                                        tau, pair_censoring)
-    list(matched_adata = matched_adata, matched_cohort = matched_data)
-}
-
-
 #' Get analysis matched dataset from matched cohort
 #'
 #' @description This function modifies the original matched data, preparing it for use in
