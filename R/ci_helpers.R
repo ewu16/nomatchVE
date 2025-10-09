@@ -21,11 +21,12 @@
 #'
 #' @return A matrix containing the lower and upper confidence intervals and
 #' relevant bootstrap standard errors.
-#' @export
+#'
+#' @keywords internal
+#' @noRd
 #'
 compute_boot_ci <- function(x, boot_x, ci_type, alpha = .05, transform = NULL, z_star = NULL){
     #note boot_x may contains NAs. not able to subset because need to keep matrix structure
-    boot_sd <- apply(boot_x, 2, \(x) stats::sd(x, na.rm = TRUE))
 
     if(ci_type == "wald"){
         ci_out <- compute_wald_ci(x, boot_x, alpha, transform, z_star)
@@ -39,12 +40,13 @@ compute_boot_ci <- function(x, boot_x, ci_type, alpha = .05, transform = NULL, z
         ci_out <- cbind(ci_wald, ci_percentile)
     }
 
-    cbind(ci_out, boot_sd)
+    ci_out
 }
 
 
 #' @rdname compute_boot_ci
-#' @export
+#' @keywords internal
+#' @noRd
 compute_wald_ci <- function(x, boot_x,  alpha = .05, transform, z_star = NULL){
     if(!is.null(z_star)){
         z_crit <- z_star
@@ -68,8 +70,8 @@ compute_wald_ci <- function(x, boot_x,  alpha = .05, transform, z_star = NULL){
         lower <- -1*(exp(x_log + z_crit*boot_sd) - 1)
         upper <-  -1*(exp(x_log - z_crit*boot_sd) - 1)
     }
-    wald_ci <- cbind(lower, upper, boot_sd, wald_n = boot_n)
-    colnames(wald_ci) <- c("wald_lower", "wald_upper","wald_sd", "wald_n")
+    wald_ci <- cbind(lower, upper, wald_n = boot_n)
+    colnames(wald_ci) <- c("wald_lower", "wald_upper", "wald_n")
     wald_ci
 }
 
@@ -80,7 +82,8 @@ log_ve <- function(x){log(1-x)}
 
 
 #' @rdname compute_boot_ci
-#' @export
+#' @keywords internal
+#' @noRd
 compute_percentile_ci <- function(boot_x, alpha = .05){
     lower <- apply(boot_x, 2, \(x) stats::quantile(x, alpha/2, na.rm = TRUE))
     upper <- apply(boot_x, 2, \(x) stats::quantile(x, 1 - alpha/2, na.rm = TRUE))
