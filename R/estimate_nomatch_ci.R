@@ -14,22 +14,22 @@
 #' @return A list containing the following:
 #' \describe{
 #'  \item{ci_estimates}{A list of matrices containing the lower and upper confidence interval bounds and
-#'  bootstrap standard error for each term. When `ci_type = "wald"`, the bootstrapped standard errors
+#'  bootstrap standard error for each term. When `confint_type = "wald"`, the bootstrapped standard errors
 #'  on the transformed scale are also included.}
 #'  \item{n_success_boot}{The number of bootstrap samples used to compute confidence interval}
 #'  \item{boot_samples}{A matrix containing estimates from all bootstrap replications. Rows
 #'  represent bootstrap iterations, columns the term estimated.}
 #' }
-#' @export
+#' @keywords internal
 #'
-estimate_ci <- function(data,
+estimate_nomatch_ci <- function(data,
                         outcome_name, event_name, trt_name, time_name,
-                        adjust_vars, marginalizing_dist,
+                        adjust_vars, weighting,
                         times, censor_time, tau,
-                        boot_formula_0, boot_formula_1,
-                        matched_data,
+                        boot_formula_0 = NULL, boot_formula_1 = NULL,
+                        matched_data =  NULL,
                         gp_list,
-                        ci_type,
+                        confint_type,
                         limit_type,
                         n_boot,
                         pt_est = NULL,
@@ -43,7 +43,7 @@ estimate_ci <- function(data,
                           trt_name = trt_name,
                           time_name = time_name,
                           adjust_vars = adjust_vars ,
-                          marginalizing_dist = marginalizing_dist,
+                          weighting = weighting,
                           times = times,
                           censor_time = censor_time,
                           tau = tau,
@@ -53,9 +53,9 @@ estimate_ci <- function(data,
                           gp_list = gp_list,
                           limit_type = limit_type)
 
-   estimate_general_ci(one_boot_function_name = "one_boot_ve",
+   estimate_bootstrap_ci(one_boot_function_name = "one_boot_nomatch",
                        one_boot_args = one_boot_args,
-                       ci_type = ci_type,
+                       confint_type = confint_type,
                        n_boot = n_boot,
                        pt_est = pt_est,
                        alpha = alpha,
@@ -74,16 +74,16 @@ estimate_ci <- function(data,
 #' @description This function creates a bootstrapped sample and computes the
 #' corresponding point estimate
 #'
-#' @inheritParams estimate_ci
+#' @inheritParams estimate_nomatch_ci
 #'
 #' @return  A matrix of bootstrapped estimates where the the columns of the matrix are the cumulative
 #'  incidence/VE terms and the rows are the requested time points for evaluation.
 #'
-#' @export
+#' @keywords internal
 #'
-one_boot_ve <- function(data,
+one_boot_nomatch <- function(data,
                         outcome_name, event_name, trt_name, time_name,
-                        adjust_vars, marginalizing_dist,
+                        adjust_vars, weighting,
                         times, censor_time, tau,
                         boot_formula_0,
                         boot_formula_1,
@@ -100,7 +100,7 @@ one_boot_ve <- function(data,
 
 
     #bootstrap matched adata if needed
-    if(!is.list(marginalizing_dist) && marginalizing_dist == "matched" && limit_type == "limit"){
+    if(weighting == "matched" && limit_type == "limit"){
         #print("Bootstrap matched")
         boot_match_ids <- sample(unique(matched_data$pair_id), replace = TRUE)
         boot_match_inds <- as.vector(sapply(boot_match_ids, \(pair_id) which(matched_data$pair_id == pair_id)))
@@ -113,28 +113,29 @@ one_boot_ve <- function(data,
     # --------------------------------------------------------------------------
     # 2. Set marginalizing distribution based on limit type
     # --------------------------------------------------------------------------
-    if(is.list(marginalizing_dist)){
+    if(weighting == "custom"){
         limit_type <- "fixed"
-        boot_marginalizing_dist <- marginalizing_dist
-    }else if(limit_type == "fixed"){
-        boot_marginalizing_dist <- gp_list
+    }
+    if(limit_type == "fixed"){
+        boot_weighting <- "custom"
+        boot_custom_weights  <- gp_list
     }else if(limit_type == "limit"){
-        boot_marginalizing_dist <- marginalizing_dist
-    }else{
-        stop("not a valid limit_type")
+        boot_weighting <- weighting
+        boot_custom_weights  <- NULL
     }
 
     # --------------------------------------------------------------------------
     # 3. Compute VE for bootstrapped data
     # --------------------------------------------------------------------------
 
-    boot_ve <- get_one_ve(data = boot_data ,
+    boot_ve <- get_one_nomatch_ve(data = boot_data ,
                           outcome_name = outcome_name,
                           event_name = event_name,
                           trt_name = trt_name,
                           time_name = time_name,
                           adjust_vars = adjust_vars ,
-                          marginalizing_dist = boot_marginalizing_dist,
+                          weighting = boot_weighting,
+                          custom_weights = boot_custom_weights,
                           matched_dist_options = matched_dist(matched_data = boot_match_data),
                           times = times,
                           censor_time = censor_time,
