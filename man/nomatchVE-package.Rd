@@ -11,11 +11,13 @@ Implements estimators for a proposed causal estimand of vaccine effectiveness us
 Useful links:
 \itemize{
   \item \url{https://ewu16.github.io/nomatchVE/}
+  \item \url{https://github.com/ewu16/nomatchVE}
+  \item Report bugs at \url{https://github.com/ewu16/nomatchVE/issues}
 }
 
 }
 \author{
-\strong{Maintainer}: Emily Wu \email{first.last@example.com} (\href{https://orcid.org/YOUR-ORCID-ID}{ORCID})
+\strong{Maintainer}: Emily Wu \email{emily.wu2@emory.edu} (\href{https://orcid.org/0009-0003-5487-6753}{ORCID})
 
 }
 \keyword{internal}

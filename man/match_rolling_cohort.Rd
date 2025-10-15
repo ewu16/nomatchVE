@@ -2,55 +2,72 @@
 % Please edit documentation in R/match_rolling_cohort.R
 \name{match_rolling_cohort}
 \alias{match_rolling_cohort}
-\title{Perform exact 1:1 matching using "rolling cohort" design}
+\title{Match vaccinated and unvaccinated individuals using rolling cohort design}
 \usage{
 match_rolling_cohort(
   data,
   outcome_name,
   trt_name,
   time_name,
-  id_name,
   matching_vars,
+  id_name,
   replace = FALSE,
   seed = NULL
 )
 }
 \arguments{
-\item{data}{A data frame for which matches are sought}
+\item{data}{Data frame with study population}
 
-\item{outcome_name}{Character string specifying the name of the outcome
-variable in \code{data}. Outcome variable should be a numeric representing follow-up time relative to study
-start d0.}
+\item{outcome_name}{Name of the possibly-censored time-to-event variable, measured from the chosen time origin.}
 
-\item{trt_name}{Character string specifying name of the vaccination indicator
-variable in \code{data}. Vaccination indicator is an indicator of ever receiving vaccine during the
-follow-up period and should be numeric-valued: 1=yes, 0 = no.}
+\item{trt_name}{Name of the exposure indicator. The underlying column should be numeric
+(\code{1} = exposed during follow-up, \code{0} = never exposed during follow-up). Exposure indicator
+should indicate whether an individual is exposed while uncensored and before experiencing the endpoint of interest.}
 
-\item{time_name}{Character string specifying name of the vaccination time
-variable in \code{data}. Vaccination time should be NA if never received vaccine
-during follow-up.}
+\item{time_name}{Name of the time to exposure, measured from the chosen time origin; use \code{NA} if not exposed.}
 
-\item{id_name}{Character string specifying name of a unique individual
-identifier in \code{data}.}
+\item{matching_vars}{Character vector of variables to match on exactly}
 
-\item{matching_vars}{A character vector containing the names of variables in
-\code{data} to match on .}
+\item{id_name}{Name of unique identifier variable of individuals}
 
-\item{replace}{Logical: Should matching be done with replacement?}
+\item{replace}{Logical. Allow controls to be reused? Default: \code{FALSE}}
 
-\item{seed}{Numeric: seed to set prior to performing random matching}
+\item{seed}{Integer for reproducibility. Default: \code{NULL}}
 }
 \value{
 A list containing the following:
 \describe{
-\item{matched_data}{A data frame containing the matched individuals}
-\item{n_unmatched_cases}{The number of vaccinated individuals for whom no match was found}
-\item{discarded}{A logical vector denoting whether individual in the source population was
-not included in matched_cohort}
+\item{matched_data}{Data frame of matched pairs with original variables plus:
+\itemize{
+\item \code{match_index_time}: Matching time
+\item \code{match_type}: "case" or "control"
+\item \verb{match_<trt_name>}: Treatment at matching
+\item \code{match_id}: Pair identifier
+}
+}
+\item{n_unmatched_cases}{Number of unmatched vaccinated individuals}
+\item{discarded}{Logical vector indicating excluded individuals}
 }
 }
 \description{
-This function creates a matched cohort based on the rolling cohort design.
-Individuals are eligible to be selected as unvaccinated "controls" only if they
-are unvaccinated and endpoint free on the potential matching date
+Creates 1:1 matched pairs of vaccinated ("cases") and unvaccinated ("controls")
+individuals. Uses a rolling cohort design where controls must be unvaccinated and event-free at the time they are
+matched to a case.
+}
+\details{
+For each vaccination time, newly vaccinated individuals are matched to
+eligible controls using exact covariate matching. Controls are eligible if
+unvaccinated and event-free at that time. Vaccinated individuals may appear
+as a control (when they are not yet vaccinated) and as a case.
+}
+\examples{
+matched_cohort <- match_rolling_cohort(
+data = simdata,
+outcome_name =  "Y",
+trt_name = "V",
+time_name = "D_obs",
+matching_vars = c("x1", "x2"),
+id_name = "ID",
+seed = 5678
+)
 }

@@ -10,12 +10,11 @@ get_one_matching_ve(
   event_name,
   trt_name,
   time_name,
-  method,
-  adjust,
+  tau,
   times,
   censor_time,
-  tau,
-  pair_censoring = TRUE,
+  method = "km",
+  adjust = NULL,
   separate = TRUE,
   return_models = TRUE
 )
@@ -23,20 +22,27 @@ get_one_matching_ve(
 \arguments{
 \item{matched_data}{A data frame for the matched cohort}
 
-\item{outcome_name}{Character string specifying the name of the outcome
-variable in \code{data}. Outcome variable should be a numeric representing follow-up time relative to study
-start d0.}
+\item{outcome_name}{Name of the possibly-censored time-to-event variable, measured from the chosen time origin.}
 
-\item{event_name}{Character string specifying the name of the event indicator
-variable in \code{data}. Event indicator should be numeric-valued: 1=event, 0=censored.}
+\item{event_name}{Name of the event indicator. The underlying column should be numeric
+(\code{1} = event, \code{0} = censored).}
 
-\item{trt_name}{Character string specifying name of the vaccination indicator
-variable in \code{data}. Vaccination indicator is an indicator of ever receiving vaccine during the
-follow-up period and should be numeric-valued: 1=yes, 0 = no.}
+\item{trt_name}{Name of the exposure indicator. The underlying column should be numeric
+(\code{1} = exposed during follow-up, \code{0} = never exposed during follow-up). Exposure indicator
+should indicate whether an individual is exposed while uncensored and before experiencing the endpoint of interest.}
 
-\item{time_name}{Character string specifying name of the vaccination time
-variable in \code{data}. Vaccination time should be NA if never received vaccine
-during follow-up.}
+\item{time_name}{Name of the time to exposure, measured from the chosen time origin; use \code{NA} if not exposed.}
+
+\item{tau}{Time after exposure (vaccination)  to exclude as part of an "immune build-up" period. Must be non-negative.
+Common values may include 0 days (no delay), 7 days (one week), 14 days (two weeks) and should
+match the biological understanding of when vaccine-induced immunity develops.}
+
+\item{times}{Numeric vector of time after exposure at which to evaluate VE. All values must be greater than tau and
+should reflect meaningful clinical timepoints (e.g., 30, 60, 90 days).}
+
+\item{censor_time}{Time after exposure at which exposed
+individuals are administratively censored during model fitting. Default:
+\code{max(times)}. This is used to limit borrowing of information from beyond the time period of interest.}
 
 \item{method}{Character string specifying method for survival estimation ("cox" for
 Cox proportional hazards regression model or "km" for Kaplan-Meier estimation)}
@@ -44,21 +50,10 @@ Cox proportional hazards regression model or "km" for Kaplan-Meier estimation)}
 \item{adjust}{If \code{method = "cox"}, a formula or  character vector containing the names of covariates in
 \code{matched_data} to adjust for.}
 
-\item{times}{A numeric vector containing the times (relative to time of vaccination) at which to return
-the cumulative incidence estimates.}
-
-\item{censor_time}{The time at which vaccinated individuals are censored during model fitting.
-By default, this is set to \code{max(times)}.}
-
-\item{tau}{The time excluded after vaccination to allow building up of
-immunity}
-
-\item{pair_censoring}{Logical to indicate if matched pairs should be censored
-when unvaccinated pair becomes vaccinated.}
-
 \item{separate}{If \code{method = cox} and \code{separate = TRUE}, Cox regression models are fit in the treated and untreated groups separately.}
 
-\item{return_models}{Logical value: Should fitted survival models be returned?}
+\item{return_models}{Logical; return fitted conditional hazard models?
+Default: \code{TRUE}.}
 }
 \value{
 The object returned by \code{\link[=compute_marginal_ve]{compute_marginal_ve()}}
@@ -68,3 +63,4 @@ First, creates the analysis matched data set based on \code{matched_data}.
 Then calls \code{\link[=compute_marginal_ve]{compute_marginal_ve()}} on the analysis data set, specifying
 the appropriate outcome and treatment arguments.
 }
+\keyword{internal}

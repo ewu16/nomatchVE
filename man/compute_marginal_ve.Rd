@@ -28,8 +28,8 @@ time should be the time to event from vaccination/matched index date}
 
 \item{adata_trt_name}{Character string specifying the treatment variable in \code{adata}}
 
-\item{times}{A numeric vector containing the times (relative to time of vaccination) at which to return
-the cumulative incidence estimates.}
+\item{times}{Numeric vector of time after exposure at which to evaluate VE. All values must be greater than tau and
+should reflect meaningful clinical timepoints (e.g., 30, 60, 90 days).}
 
 \item{method}{Character string specifying method for survival estimation ("cox" for
 Cox proportional hazards regression model or "km" for Kaplan-Meier estimation)}
@@ -37,12 +37,14 @@ Cox proportional hazards regression model or "km" for Kaplan-Meier estimation)}
 \item{adjust}{If \code{method = "cox"}, a formula or  character vector containing the names of covariates in
 \code{matched_data} to adjust for.}
 
-\item{censor_time}{The time at which vaccinated individuals are censored during model fitting.
-By default, this is set to \code{max(times)}.}
+\item{censor_time}{Time after exposure at which exposed
+individuals are administratively censored during model fitting. Default:
+\code{max(times)}. This is used to limit borrowing of information from beyond the time period of interest.}
 
 \item{separate}{If \code{method = cox} and \code{separate = TRUE}, Cox regression models are fit in the treated and untreated groups separately.}
 
-\item{return_models}{Logical value: Should fitted survival models be returned?}
+\item{return_models}{Logical; return fitted conditional hazard models?
+Default: \code{TRUE}.}
 }
 \value{
 A list containing the following:
@@ -57,3 +59,4 @@ incidence/VE terms and the rows are the requested time points for evaluation.}
 Internally calls \code{\link[=compute_cox_ve]{compute_cox_ve()}} or \code{\link[=compute_km_ve]{compute_km_ve()}} depending
 on the value of \code{method}
 }
+\keyword{internal}

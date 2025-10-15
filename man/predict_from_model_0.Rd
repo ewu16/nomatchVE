@@ -3,37 +3,115 @@
 \name{predict_from_model_0}
 \alias{predict_from_model_0}
 \alias{predict_from_model_1}
-\title{Compute psi_0(t0; d, x) and psi_1(t0; d,x ), respectively.}
+\title{Predict conditional cumulative incidences from fitted Cox models at a specific timepoint}
 \usage{
 predict_from_model_0(fit_0, time_name, t0, tau, gp_list)
 
 predict_from_model_1(fit_1, time_name, t0, tau, gp_list)
 }
 \arguments{
-\item{fit_0}{A fitted survival model for the unvaccinated group}
+\item{fit_0}{A fitted model with a \code{predict()} method supporting \code{type = "survival"}
+trained on \code{Surv(time, event) ~ X} with \emph{time from study start}.}
 
-\item{time_name}{Character string specifying name of the vaccination time
-variable in \code{data}. Vaccination time should be NA if never received vaccine
-during follow-up.}
+\item{time_name}{Name of the time variable column in \code{gp_list$g_dist} describing
+when individuals are vaccinated. Used as the base time to which \code{tau}/\code{t0} are added to
+compute the times that need to be evaluated for \code{predict_from_model_0}. Not
+used in \code{predict_from_model_1} since predictions are evaluated at \code{tau}/\code{t0} directly.}
 
-\item{t0}{A timepoint at which cumulative incidence should be evaluated}
+\item{t0}{Timepoint at which to evaluate cumulative incidence (relative to vaccination day)}
 
-\item{tau}{The time excluded after vaccination to allow building up of
-immunity}
+\item{tau}{Delay period}
 
-\item{gp_list}{List of marginalizing distributions. Used to determine which x, d
-will be used for prediction}
+\item{gp_list}{a \code{list(g_dist, p_dist)} providing weights for marginalization. This is
+used so that predictions are only computed for (d,x) where g(d|x) > 0.
+- \code{g_dist}: data frame with columns \code{time_name} (vaccination day),
+all variables in \code{adjust_vars}, \code{group_name} (covariate-group id),
+and \code{prob} (probability of day given group).
+- \code{p_dist}: data frame with variables in \code{adjust_vars} and \code{prob}.
+Currently only the \code{g_dist} element in \code{gp_list} is used.}
 
-\item{fit_1}{A fitted survival model for the vaccinated group}
+\item{fit_1}{A fitted model with a \code{predict()} method supporting \code{type = "survival"}
+trained on \code{Surv(time, event) ~ D + X} with \emph{time since vaccination}.}
 }
 \value{
-A data frame of predictions for day and covariate groups in in \code{gp_list}
+A data frame with the identifier/covariate columns from \code{g_dist}
+(excluding \code{prob}/\code{group_name} if present) and columns \code{surv_d_plus_tau},
+\code{surv_d_plus_t0}, and \code{cuminc_0}.
+
+A data frame with the identifier/covariate columns from \code{g_dist}
+(excluding \code{prob}/\code{group_name} if present) and columns \code{surv_tau}, \code{surv_t0}, and \code{cuminc_1}
 }
 \description{
 These functions compute the conditional day- and covariate-specific cumulative
-incidences.
-\code{predict_from_model_0()} calculates \verb{psi_0(t0; d, x)} by using x as covariates in prediction and obtaining survival
-at d + t0 and d + tau days
-\code{predict_from_model_1()} calculates \verb{psi_1(t0; d, x)} by using x and d as covariates in prediction
-and obtaining survival at t0 days
+incidence foreach row of \code{gp_list$g_dist}.
+\code{predict_from_model_0()} computes \eqn{\psi_0(t_0; d, x) = 1 - S_0(d+t_0 \mid x)/S_0(d+\tau \mid x)}
+for each \eqn{(d,x}) in \code{gp_list$g_dist} by calling \code{predict(fit_0, newdata, type = "survival")} at times
+\code{d + t0} and \code{d + tau}.
+
+\code{predict_from_model_1()} computes \eqn{\psi_1(t_0; d, x) = 1 - S_1(t_0 \mid d, x)/S_1(\tau \mid d, x)}
+for each \eqn{(d,x}) in \code{gp_list$g_dist}by calling \code{predict(fit_1, newdata, type = "survival")} at times
+\code{t0} and \code{tau}.
 }
+\examples{
+# Define parameters
+data <- simdata
+outcome_name <- "Y"
+event_name <- "event"
+trt_name <- "V"
+time_name <- "D_obs"
+adjust_vars <- c("x1", "x2")
+tau <- 14
+t0 <- 90
+
+# Get observed marginalizing distribution
+ gp_list <- get_observed_gp(
+  data =  data,
+  outcome_name = outcome_name,
+  event_name = event,
+  trt_name = trt_name,
+  time_name = time_name,
+  adjust_vars = adjust_vars,
+  tau = tau
+  )
+
+# Fit hazard model under no vaccine
+fit_0 <- fit_model_0(
+  data = data,
+  outcome_name = outcome_name,
+  event_name = event_name,
+  trt_name = trt_name,
+  time_name = time_name,
+  adjust_vars = adjust_vars
+ )
+
+# Predict from hazard model under no vaccine
+predict_from_model_0(
+  fit_0,
+  time_name = time_name,
+  t0 = t0,
+  tau = tau,
+  gp_list = gp_list
+)
+
+# Fit hazard model under vaccine
+fit_1 <- fit_model_1(
+  data = data,
+  outcome_name = outcome_name,
+  event_name = event_name,
+  trt_name = trt_name,
+  time_name = time_name,
+  adjust_vars = adjust_vars,
+  censor_time = 100,
+  tau = tau
+ )
+
+# Predict from hazard model under vaccine
+predict_from_model_1(
+  fit_1,
+  time_name = time_name,
+  t0 = t0,
+  tau = tau,
+  gp_list = gp_list
+)
+}
+\keyword{internal}

@@ -2,18 +2,28 @@
 % Please edit documentation in R/utils.R
 \name{estimates_to_df}
 \alias{estimates_to_df}
-\title{Convert estimates list to tidy data frame}
+\title{Convert VE estimates to tidy long-format data frame}
 \usage{
 estimates_to_df(estimates)
 }
 \arguments{
-\item{estimates}{{A list of matrices for cumulative incidences and VE.
-Each matrix contains the point estimate and confidence intervals for the specified term.}}
+\item{estimates}{A list of matrices, typically from \code{fit$estimates} in a \code{vefit}
+object. Each matrix (e.g., \code{cuminc_0}, \code{cuminc_1}, \code{ve}) has:
+\itemize{
+\item \strong{Rows:} Timepoints, with row names giving time values (e.g., \code{"90"} for day 90)
+\item \strong{Columns:} Estimates, confidence intervals, and related statistics.
+}}
 }
 \value{
-A data frame with columns \code{t0} specifying the time point and \code{term},
-and point estimates, and confidence intervals.
+A long-format data frame with:
+\itemize{
+\item \code{t0}: the timepoint
+\item \code{term}: what was estimated (\code{cuminc_0}, \code{cuminc_1}, or \code{ve})
+\item Remaining columns from the original matrices (estimates, confidence intervals, etc.)
+}
 }
 \description{
-Convert estimates list to tidy data frame
+Converts the \code{estimates} component of a \code{vefit} object into a single
+long-format data frame for easy plotting and analysis.
+Each row represents one term (cumulative incidence or VE) at a specific timepoint.
 }

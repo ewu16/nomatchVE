@@ -24,10 +24,11 @@ time should be the time to event from vaccination/matched index date}
 
 \item{adata_trt_name}{Character string specifying the treatment variable in \code{adata}}
 
-\item{times}{A numeric vector containing the times (relative to time of vaccination) at which to return
-the cumulative incidence estimates.}
+\item{times}{Numeric vector of time after exposure at which to evaluate VE. All values must be greater than tau and
+should reflect meaningful clinical timepoints (e.g., 30, 60, 90 days).}
 
-\item{return_models}{Logical value: Should fitted survival models be returned?}
+\item{return_models}{Logical; return fitted conditional hazard models?
+Default: \code{TRUE}.}
 }
 \value{
 A list containing the following:
@@ -41,3 +42,4 @@ incidence/VE terms and the rows are the requested time points for evaluation.}
 Get the marginal cumulative incidence in the treated and untreated
 groups based on Kaplan Meier estimation.
 }
+\keyword{internal}

@@ -4,26 +4,16 @@
 \alias{matched_dist}
 \title{Parameters for creating a matched dataset and matched analysis data set}
 \usage{
-matched_dist(
-  id_name = "ID",
-  matched_data = NULL,
-  replace = FALSE,
-  seed = NULL,
-  pair_censoring = TRUE
-)
+matched_dist(id_name = "ID", matched_data = NULL, replace = FALSE, seed = NULL)
 }
 \arguments{
-\item{id_name}{Character string specifying name of a unique individual
-identifier in \code{data}.}
+\item{id_name}{Name of unique identifier variable of individuals}
 
 \item{matched_data}{A data frame representing a matched cohort}
 
-\item{replace}{Logical: Should matching be done with replacement?}
+\item{replace}{Logical. Allow controls to be reused? Default: \code{FALSE}}
 
-\item{seed}{Numeric: seed to set prior to performing random matching}
-
-\item{pair_censoring}{Logical to indicate if matched pairs should be censored
-when unvaccinated pair becomes vaccinated.}
+\item{seed}{Integer for reproducibility. Default: \code{NULL}}
 }
 \value{
 A list with control parameters
@@ -31,3 +21,4 @@ A list with control parameters
 \description{
 Parameters for creating a matched dataset and matched analysis data set
 }
+\keyword{internal}

@@ -2,33 +2,43 @@
 % Please edit documentation in R/compute_ve.R
 \name{compute_ve_t0}
 \alias{compute_ve_t0}
-\title{Compute proposed causal VE estimand given the fitted survival models at a single
-time points of interest}
+\title{Compute VE at a single timepoint}
 \usage{
 compute_ve_t0(fit_0, fit_1, time_name, t0, tau, gp_list)
 }
 \arguments{
-\item{fit_0}{A fitted survival model for the unvaccinated group}
+\item{fit_0}{A fitted model with a \code{predict()} method supporting \code{type = "survival"}
+trained on \code{Surv(time, event) ~ X} with \emph{time from study start}.}
 
-\item{fit_1}{A fitted survival model for the vaccinated group}
+\item{fit_1}{A fitted model with a \code{predict()} method supporting \code{type = "survival"}
+trained on \code{Surv(time, event) ~ D + X} with \emph{time since vaccination}.}
 
-\item{time_name}{Character string specifying name of the vaccination time
-variable in \code{data}. Vaccination time should be NA if never received vaccine
-during follow-up.}
+\item{time_name}{Name of the time variable column in \code{gp_list$g_dist} describing
+when individuals are vaccinated. Used as the base time to which \code{tau}/\code{t0} are added to
+compute the times that need to be evaluated for \code{predict_from_model_0}. Not
+used in \code{predict_from_model_1} since predictions are evaluated at \code{tau}/\code{t0} directly.}
 
-\item{t0}{A timepoint at which cumulative incidence should be evaluated}
+\item{t0}{Timepoint at which to evaluate cumulative incidence (relative to vaccination day)}
 
-\item{tau}{The time excluded after vaccination to allow building up of
-immunity}
+\item{tau}{Delay period}
 
-\item{gp_list}{List of marginalizing distributions. Used to determine which x, d
-will be used for prediction}
+\item{gp_list}{a \code{list(g_dist, p_dist)} providing weights for marginalization. This is
+used so that predictions are only computed for (d,x) where g(d|x) > 0.
+- \code{g_dist}: data frame with columns \code{time_name} (vaccination day),
+all variables in \code{adjust_vars}, \code{group_name} (covariate-group id),
+and \code{prob} (probability of day given group).
+- \code{p_dist}: data frame with variables in \code{adjust_vars} and \code{prob}.
+Currently only the \code{g_dist} element in \code{gp_list} is used.}
 }
 \value{
-A named numeric vector containing point estimates for
-\verb{risk_0, risk_1}, and \code{ve}
+Named numeric vector with \code{cuminc_0}, \code{cuminc_1}, and \code{ve}
 }
 \description{
-Compute proposed causal VE estimand given the fitted survival models at a single
-time points of interest
+Orchestrates the three-step process:
+\enumerate{
+\item Predict conditional risks ψ(t₀; d, x) via G-computation
+\item Marginalize over (d, x) to get population risks
+\item Calculate VE = 1 - risk_vaccine/risk_no_vaccine
 }
+}
+\keyword{internal}

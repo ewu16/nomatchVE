@@ -10,8 +10,7 @@ clean_matched_data(
   event_name,
   trt_name,
   time_name,
-  tau,
-  pair_censoring = TRUE
+  tau
 )
 }
 \arguments{
@@ -27,17 +26,14 @@ clean_matched_data(
 
 \item{tau}{The time excluded after vaccination to allow building up of
 immunity}
-
-\item{pair_censoring}{Logical to indicate if matched pairs should be censored
-when unvaccinated pair becomes vaccinated.}
 }
 \value{
 A data frame representing the analysis-eligible matched dataset (a subset of \verb{matched data}).
 Contains all variables in \code{matched_data}, plus the following variables
 \describe{
-\item{<event_name>_d}{Event variable after adjusting for pair_censoring}
-\item{<outcome_name>_matched}{Outcome variable after adjusting for pair_censoring}
-\item{T_d}{Time to endpoint from matched index date (adjusted for pair_censoring if requested)}
+\item{match_<event_name>}{Event variable after adjusting for pair_censoring}
+\item{match_<outcome_name>}{Outcome variable after adjusting for pair_censoring}
+\item{match_T}{Time to endpoint from matched index date after adjusting for pair_censoring}
 }
 }
 \description{
@@ -51,3 +47,4 @@ of the unvaccinated individual's vaccination
 index date
 }
 }
+\keyword{internal}
