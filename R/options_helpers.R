@@ -4,17 +4,15 @@
 #' @inheritParams clean_matched_data
 #'
 #' @return A list with control parameters
-#' @export
+#' @keywords internal
 #'
 matched_dist <- function(id_name = "ID",
                          matched_data = NULL,
                          replace = FALSE,
-                         seed = NULL,
-                         pair_censoring = TRUE){
+                         seed = NULL){
     list(id_name = id_name,
          matched_data = matched_data,
          replace = replace,
-         seed = seed,
-         pair_censoring = pair_censoring)
+         seed = seed)
 }
 
