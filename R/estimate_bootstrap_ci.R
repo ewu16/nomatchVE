@@ -14,24 +14,24 @@
 #' @return A list containing the following:
 #' \describe{
 #'  \item{ci_estimates}{A list of matrices containing the lower and upper confidence interval bounds and
-#'  bootstrap standard error for each term. When `ci_type = "wald"`, the bootstrapped standard errors
+#'  bootstrap standard error for each term. When `confint_type = "wald"`, the bootstrapped standard errors
 #'  on the transformed scale are also included.}
 #' \item{n_success_boot}{A numeric vector of the number of successful bootstrap samples for each time point.(Success bootstrap samples are
 #'  those that result in non-missing valid point estimates.)}
 #'  \item{boot_samples}{If `return_boot = TRUE`, a list of matrices for each term that contain the bootstrap estimates where the rows are the bootstrap iterations and
 #'  the columns are the time points.}
 #' }
-#' @export
+#' @keywords internal
 #'
 #
-estimate_general_ci <- function(one_boot_function_name,
-                                one_boot_args,
-                                ci_type,
-                                n_boot,
-                                pt_est = NULL,
-                                alpha = 0.05,
-                                return_boot = TRUE,
-                                n_cores = 1){
+estimate_bootstrap_ci <- function(one_boot_function_name,
+                                  one_boot_args,
+                                  confint_type,
+                                  n_boot,
+                                  pt_est = NULL,
+                                  alpha = 0.05,
+                                  return_boot = TRUE,
+                                  n_cores = 1){
 
     if(n_boot == 0){
         return(NULL)
@@ -40,13 +40,12 @@ estimate_general_ci <- function(one_boot_function_name,
     # --------------------------------------------------------------------------
     # 1. Run bootstrap
     # --------------------------------------------------------------------------
-    cat("Bootstrapping...\n")
+    cat("Bootstrapping", n_boot, "samples...\n")
     start <- Sys.time()
     times <- one_boot_args$times
 
     boot_list <- parallel::mclapply(1:n_boot, \(i){
-        set.seed(i) #for debugging
-        #print(i)
+        set.seed(i)
         boot_out <- tryCatch({
             output <- utils::capture.output(boot_estimates <- do.call(one_boot_function_name, one_boot_args))
             #using c() here to get a wide vector of estimates to make it easier to create the matrices for each term
@@ -57,6 +56,11 @@ estimate_general_ci <- function(one_boot_function_name,
             list(output = utils::capture.output(print(e)))
         })
     }, mc.cores = n_cores)
+
+    #Bootstrap run time
+    end <- Sys.time()
+    print(end - start)
+
     names(boot_list) <- seq_along(boot_list)
 
     boot_result_list <- lapply(boot_list, \(x) x$result)
@@ -73,9 +77,7 @@ estimate_general_ci <- function(one_boot_function_name,
     ve_mat <- boot_mat[,(2*length(times) + 1):(3*length(times)), drop = FALSE]
     colnames(risk_0_mat) <- colnames(risk_1_mat) <- colnames(ve_mat) <- times
 
-    #Boostrap run time
-    end <- Sys.time()
-    print(end - start)
+
 
     #if any bootstrap estimate is missing for a specific timepoint, set
     # estimates of other terms in that boostrap to missing
@@ -94,19 +96,19 @@ estimate_general_ci <- function(one_boot_function_name,
     # --------------------------------------------------------------------------
     risk_0_ci <- compute_boot_ci(x = pt_est[,1],
                                  boot_x = risk_0_mat,
-                                 ci_type = ci_type,
+                                 confint_type = confint_type,
                                  alpha = alpha,
                                  transform = "logit")
 
     risk_1_ci <- compute_boot_ci(x = pt_est[,2],
                                  boot_x = risk_1_mat,
-                                 ci_type = ci_type,
+                                 confint_type = confint_type,
                                  alpha = alpha,
                                  transform = "logit")
 
     ve_ci <- compute_boot_ci(x = pt_est[,3],
                              boot_x = ve_mat,
-                             ci_type = ci_type,
+                             confint_type = confint_type,
                              alpha = alpha,
                              transform = "log_ve")
 
