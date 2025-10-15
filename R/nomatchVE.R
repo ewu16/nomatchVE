@@ -1,78 +1,126 @@
-#' Main function to estimate vaccine effectiveness using a G-computation
-#' style estimator
+#' Main function to estimate vaccine effectiveness (VE) without matching
 #'
-#' @description The primary function to estimate vaccine effectiveness.
-#' @param data A data frame containing pertinent information for VE estimation.
-#' @param outcome_name Character string specifying the name of the outcome
-#'   variable in `data`. Outcome variable should be a numeric representing follow-up time relative to study
-#'   start d0.
-#' @param event_name Character string specifying the name of the event indicator
-#'   variable in `data`. Event indicator should be numeric-valued: 1=event, 0=censored.
-#' @param trt_name Character string specifying name of the vaccination indicator
-#'   variable in `data`. Vaccination indicator is an indicator of ever receiving vaccine during the
-#'   follow-up period and should be numeric-valued: 1=yes, 0 = no.
-#' @param time_name Character string specifying name of the vaccination time
-#'   variable in `data`. Vaccination time should be NA if never received vaccine
-#'   during follow-up.
-#' @param adjust_vars A character vector containing the names of variables in
-#'   `data` to adjust for.
-#' @param times A numeric vector containing the times (relative to time of vaccination) at which to return
-#'   the cumulative incidence estimates.
-#' @param censor_time The time at which vaccinated individuals are censored during model fitting.
-#'    By default, this is set to `max(times)`.
-#' @param tau The time excluded after vaccination to allow building up of
-#'   immunity
-#' @param marginalizing_dist Generally, should be set to "observed", the default value,
-#'  which estimates the marginalizing distributions based on the observed data.
-#'  For historical purposes, marginalizing_dist can also be set to "matched", which uses the marginalizing distributions
-#'  of a matched dataset and requires use of the `matched_dist_options` argument.
-#'  To providing a fixed choice of marginalizing weight functions, `marginalizing_dist`
-#'  should be a list of 2 dataframes named `g_dist` and `p_dist`. `g_dist` must be a dataframe with the columns
-#'   <time_name> describing the time of vaccination, all variables in <adjust> , `group_name` identifying
-#'   each unique covariate group, and `prob` for the corresponding probability. `p_dist` must be a dataframe with
-#'   all variables in <adjust> and variable `prob` for the corresponding probability.
-#' @param matched_dist_options If `marginalizing_dist == "matched"`, a list of
-#'   parameters controlling process of creating matched cohort and matched analysis
-#'   dataset from which marginalizing distributions will be estimated. List
-#'   can be created by [matched_dist()].
-#' @param formula_0 A formula or pre-fit model for estimating hazards in
-#'   unvaccinated group (recommended for use only by power users)
-#' @param formula_1 A formula or pre-fit model for estimating hazards in
-#'   vaccinated group. (recommended for use only by power users)
-#' @param ci_type Character string indicating which type of confidence interval
-#'   to return ("wald", "percentile", "both")
-#' @param limit_type Generally, should be set to "limit", the default value.  For historical purposes,
-#'   `limit_type` can also be set to fixed, which treats the marginalizing distributions as
-#'   fixed. For a prespecified marginalizing_dist, `limit_type` is always fixed.
-#' @param n_boot Number of bootstrap replicated used to compute confidence
-#'   intervals
-#' @param alpha Significance level used to compute confidence intervals.
-#'   Confidence intervals have nominal level `1 - alpha`.
-#' @param return_models Logical value: Should fitted survival models be returned?
-#' @param return_boot Logical value: Should bootstrap estimates be returned?
-#' @param n_cores Number of cores to use to when running bootstrapping procedure. Passed as `mc.cores` argument to `parallel::mclapply`.
-#' If `n_cores > 1`, this parallelizes the bootstrapping procedure on Unix-like systems (not available on Windows).
+#' @description
+#' `nomatchVE()` estimates VE over time without matching by using a G-computation
+#' approach. It fits two conditional hazard models, one for each exposure type (e.g. vaccine vs no vaccine).
+#' The models are used to predict time- and covariate- specific
+#' cumulative incidences. These cumulative incidences are then marginalized over
+#' the observed distributions of exposure uptake and baseline covariates among the exposed (e.g. vaccinated) group.
 #'
-#' @return A list. In addition to information related to the call/arguments to `nomatchVE`, contains the following:
+#'
+#' @param data A data frame with one row per individual containing
+#'   the columns named in `outcome_name`, `event_name`, `trt_name`, `time_name`,
+#'   and any variables listed in `adjust_vars`.
+#' @param outcome_name Name of the possibly-censored time-to-event variable, measured from the chosen time origin.
+#' @param event_name Name of the event indicator. The underlying column should be numeric
+#'   (`1` = event, `0` = censored).
+#' @param trt_name Name of the exposure indicator. The underlying column should be numeric
+#'   (`1` = exposed during follow-up, `0` = never exposed during follow-up). Exposure indicator
+#'   should indicate whether an individual is exposed while uncensored and before experiencing the endpoint of interest.
+#' @param time_name Name of the time to exposure, measured from the chosen time origin; use `NA` if not exposed.
+#' @param adjust_vars Character vector of baseline covariates to adjust for when fitting the hazard models.
+#' @param tau Time after exposure (vaccination)  to exclude as part of an "immune build-up" period. Must be non-negative.
+#'   Common values may include 0 days (no delay), 7 days (one week), 14 days (two weeks) and should
+#'   match the biological understanding of when vaccine-induced immunity develops.
+#' @param times Numeric vector of time after exposure at which to evaluate VE. All values must be greater than tau and
+#'   should reflect meaningful clinical timepoints (e.g., 30, 60, 90 days).
+#' @param censor_time Time after exposure at which exposed
+#'   individuals are administratively censored during model fitting. Default:
+#'   `max(times)`. This is used to limit borrowing of information from beyond the time period of interest.
+#' @param weighting Character string specifying the type of marginalizing weights to use.
+#'   Either:
+#'   * `"observed"` (default): use the empirical distribution of time to exposure and covariates among the exposed as the
+#'   marginalizing weights. This provides close alignment with the weights implicitly used in matching.
+#'   * `"custom"`: use user-specified weights provided in the `custom_weights` argument
+#' @param custom_weights a `list(g_dist, p_dist)` providing custom weights for marginalization.
+#' Must have the following format:
+#'   * `g_dist`: data frame with columns
+#'      * `time_name` (time of exposure),
+#'      *  all variables in `adjust_vars`
+#'      * `group_name` (unique identifier for each covariate-group),
+#'      * `prob` (probability of exposure at the given time within the covariate-group. Should sum to 1 within each covariate-group)
+#'   * `p_dist`: data frame with columns
+#'      *  all variables in `adjust_vars`
+#'      * `prob` (probability of covariate-group. Should sum to 1 over all covariate groups.)
+#' @param confint_type Method for constructing confidence intervals.
+#'   One of `"wald"`, `"percentile"`, or `"both"`.
+#'   - `"wald"`: Computes Wald-style intervals using bootstrap standard errors.
+#'   - `"percentile"`: Computes percentile bootstrap intervals.
+#'   - `"both"`: Computes and returns both sets of intervals.
+#'   Default: `"wald"`. See **Confidence intervals** section.
+#' @param n_boot Number of bootstrap replicates for confidence intervals.
+#'   Recommended to use at least 1000 for publication-quality results. Use smaller values (e.g., 10-100) for initial exploration.
+#'   Default: `0` (no bootstrapping).
+#' @param alpha Significance level for confidence intervals (Confidence level = 100*(1-`alpha`)%). Default: `0.05`.
+#' @param return_models Logical; return fitted conditional hazard models?
+#'   Default: `TRUE`.
+#' @param return_boot Logical; return bootstrap draws in `boot_samples`?
+#'   Default: `TRUE`. Must be set to `TRUE` if user plans to use [add_simultaneous_ci()]
+#'   to obtain simultaneous confidence intervals.
+#' @param n_cores Integer; parallel cores for bootstrapping. Passed to
+#'   `parallel::mclapply` as `mc.cores`. On Unix-like OS only; not available on
+#'   Windows. Default: `1`.
+#'
+#'
+#' @return An object of class `vefit` containing:
 #' \describe{
-#'  \item{estimates}{A list of matrices for cumulative incidences and VE.
-#'  Each matrix contains the point estimate and confidence intervals for the specified term.}
-#'  \item{gp_list}{A list containing the distributions g(d|x) and p(x) used for marginalization}.
-#'  \item{model_0}{The fit object used to predict risk for unvaccinated group}
-#'  \item{model_1}{The fit object used to predict risk for vaccinated group}
-#'  \item{n_success_boot}{A numeric vector of the number of successful bootstrap samples for each time point.(Success bootstrap samples are
-#'  those that result in non-missing valid point estimates.)}
-#'  \item{boot_samples}{If `return_boot = TRUE`, a list of matrices for each term that contain the bootstrap estimates where the rows are the bootstrap iterations and
-#'  the columns are the time points.}
+#'   \item{estimates}{List of matrices: `cuminc_0`, `cuminc_1`, `ve`.
+#'     Each matrix has rows corresponding to `times` and columns containing point estimates and confidence intervals.}
+#'   \item{gp_list}{List with dataframes `g_dist`, `p_dist` used for marginalization.}
+#'   \item{model_0}{Fitted hazard model under no exposure.}
+#'   \item{model_1}{Fitted hazard model under exposure .}
+#'   \item{n_success_boot}{Numeric vector with length equal to `length(times)`:
+#'   indicates number of successful bootstrap replications per timepoint.}
+#'   \item{boot_samples}{(If `return_boot = TRUE`) list of matrices with bootstrap
+#'     estimates; rows = bootstrap iterations, cols = `times`.}
 #' }
+#'
+#' The `vefit` object has methods for [print()], [summary()], and [plot()].
+#' Use [add_simultaneous_ci()] to add simultaneous confidence intervals.
+#'
 
+#' @details
+#' **Modeling.** Two Cox models are fit: one over the chosen time scale among the
+#' not-yet-exposed, and one over time-since-exposure among the exposed who remain
+#' at-risk `tau` days after exposure. For the exposed hazard model, exposure time is included as a natural cubic
+#' spline with 4 degrees of freedom. Predictions are combined via G-computation and
+#' marginalized.
+#'
+#'**Marginalizing weights.** When `weighting = observed`, the marginalizing weights
+#' are the empirical distributions of exposure times and covariates among the exposed who remain
+#' at-risk `tau` days after exposure. These weights are returned in the `vefit` object under `gp_list`.
+#' They can also be obtained prior to the call to `nomatchVE()` by calling `get_observed_weights()`.
+#'
+#'
+#' **Confidence intervals.** Wald CIs are constructed on transformed scales:
+#'   logit for cumulative incidence; `log(1 - VE)` for VE, using bootstrap SEs,
+#'   then back-transformed.
+#'
+#' **Parallelization.** Bootstraps can be parallelized on Unix via [parallel::mclapply()]
+#' by providing `n_cores` argument.
+#
 
 #' @export
 #'
-# @examples
-
-
-
+#' @examples
+#' # Fit vaccine effectiveness model using simulated data
+#' data(simdata)
+#'
+#' fit <- nomatchVE(
+#'   data = simdata,
+#'   outcome_name = "Y",
+#'   event_name = "event",
+#'   trt_name = "V",
+#'   time_name = "D_obs",
+#'   adjust_vars = c("x1", "x2"),
+#'   times = seq(30, 180, by = 30),
+#'   tau = 14,
+#'   n_boot = 5,
+#'   n_cores = 2
+#' )
+#'
+#' # View basic results
+#' fit$estimates
 
 nomatchVE <- function(data,
                   outcome_name,
@@ -80,51 +128,43 @@ nomatchVE <- function(data,
                   trt_name,
                   time_name,
                   adjust_vars,
+                  tau,
                   times,
                   censor_time = max(times),
-                  tau = 14,
-                  ci_type = "wald",
-                  limit_type = "limit",
+                  weighting = c("observed", "custom"),
+                  custom_weights = NULL,
+                  confint_type = c("wald", "percentile", "both"),
                   n_boot = 0,
                   alpha = 0.05,
-                  marginalizing_dist = "observed",
-                  matched_dist_options = NULL,
-                  formula_0 = NULL,
-                  formula_1 = NULL,
                   return_models = TRUE,
                   return_boot = TRUE,
                   n_cores = 1
                   ){
 
      call <- match.call()
+     weighting <- match.arg(weighting)
+     confint_type <- match.arg(confint_type)
 
     # --------------------------------------------------------------------------
     # 0 - Prep
     # --------------------------------------------------------------------------
 
      # Check data/inputs
-     stopifnot("<outcome_name> not in data" = outcome_name %in% names(data))
-     stopifnot("<event_name>  not in data" = event_name %in% names(data))
-     stopifnot("<trt_name> not in data" = trt_name %in% names(data))
-     stopifnot("<time_name> not in data" = trt_name %in% names(data))
-     stopifnot("<adjust_vars> not in data" = adjust_vars %in% names(data))
+     validate_ve_inputs(data, outcome_name, event_name, trt_name, time_name, adjust_vars, times, tau, censor_time)
 
-     #check marginalizing_dist is proper gp_list?
-     if(is.list(marginalizing_dist)){
-         stopifnot(names(marginalizing_dist) %in% c("g_dist", "p_dist"))
-         stopifnot("group_name" %in% names(marginalizing_dist$g_dist))
-         stopifnot(time_name %in% names(marginalizing_dist$g_dist))
-         stopifnot(adjust_vars %in% names(marginalizing_dist$g_dist))
-         stopifnot(adjust_vars %in% names(marginalizing_dist$p_dist))
-         stopifnot("weighted in g_dist must add to 1 for each covariate group" =
-                    all.equal(unname(sapply(split(marginalizing_dist$g_dist, marginalizing_dist$g_dist$group_name), \(x) sum(x$prob))),
-                              rep(1, length(unique(marginalizing_dist$g_dist$group_name)))))
-         stopifnot("weights in p_dist must add to 1" = sum(marginalizing_dist$p_dist$prob) == 1)
-
+     if(weighting == "custom"){
+         validate_marginalizing_weights(custom_weights, time_name, adjust_vars)
      }
 
-     if(!is.list(marginalizing_dist) && marginalizing_dist == "matched"){
-        stopifnot("must provide matched_dist_options argument" = !is.null(matched_dist_options))
+
+     if (n_boot == 0) {
+         if (confint_type != "none") {
+             message("n_boot = 0, setting confint_type = 'none'")
+         }
+         confint_type <- "none"
+     }
+     if (confint_type == "none") {
+         n_boot <- 0
      }
 
      # --------------------------------------------------------------------------
@@ -137,52 +177,32 @@ nomatchVE <- function(data,
                              trt_name = trt_name,
                              time_name = time_name,
                              adjust_vars = adjust_vars,
-                             marginalizing_dist = marginalizing_dist,
-                             matched_dist_options = matched_dist_options,
                              times = times,
-                             censor_time = censor_time,
                              tau = tau,
-                             formula_0 = formula_0,
-                             formula_1 = formula_1)
+                             censor_time = censor_time,
+                             weighting = weighting,
+                             custom_weights = custom_weights
+                            )
 
-     original <- do.call("get_one_ve", estimation_args)
+     original <- do.call("get_one_nomatch_ve", estimation_args)
 
 
 
     # --------------------------------------------------------------------------
     # 2 - Get bootstrap CI
     # --------------------------------------------------------------------------
-
-     # for bootstrapping, cannot use prefit model, need to fit model in each sample
-     if(methods::is(formula_0, "coxph")){
-         boot_formula_0 <- stats::update(stats::formula(formula_0), NULL ~ .)
-     }else{
-         boot_formula_0 <- formula_0
-     }
-
-     if(methods::is(formula_1, "coxph")){
-         boot_formula_1 <- stats::update(stats::formula(formula_1), NULL ~ .)
-     }else{
-         boot_formula_1 <- formula_1
-     }
-
-
-     unused_args <- names(estimation_args) %in% c("formula_0", "formula_1", "matched_dist_options")
-     estimate_ci_args <- c(estimation_args[!unused_args],
-                           list(boot_formula_0 = boot_formula_0,
-                                boot_formula_1 = boot_formula_1,
-                                matched_data = original$matched_data,
-                                pt_est = original$estimates,
+     estimate_nomatch_ci_args <- c(estimation_args[!names(estimation_args) %in% c("custom_weights")] ,
+                           list(pt_est = original$estimates,
                                 gp_list = original$gp_list,
-                                ci_type = ci_type,
-                                limit_type = limit_type,
+                                confint_type = confint_type,
+                                limit_type = "limit",
                                 n_boot = n_boot,
                                 alpha = alpha,
                                 return_boot = return_boot,
                                 n_cores = n_cores))
 
 
-     boot_inference <- do.call("estimate_ci", estimate_ci_args)
+     boot_inference <- do.call("estimate_nomatch_ci", estimate_nomatch_ci_args)
 
 
      # --------------------------------------------------------------------------
@@ -190,9 +210,8 @@ nomatchVE <- function(data,
      # --------------------------------------------------------------------------
      pt_est <- original$estimates
      ci_est <-boot_inference$ci_estimates
-     #ci_est <-boot_inference$ci_estimates
-     estimates <- list(risk_0 = cbind(estimate = pt_est[,1], ci_est[[1]]),
-                       risk_1 = cbind(estimate = pt_est[,2], ci_est[[2]]),
+     estimates <- list(cuminc_0 = cbind(estimate = pt_est[,1], ci_est[[1]]),
+                       cuminc_1 = cbind(estimate = pt_est[,2], ci_est[[2]]),
                        ve = cbind(estimate = pt_est[,3], ci_est[[3]]))
 
 
@@ -213,29 +232,20 @@ nomatchVE <- function(data,
          times = times,
          censor_time = censor_time,
          tau = tau,
-         ci_type = ci_type,
-         limit_type = limit_type,
+         confint_type = confint_type,
          n_boot = n_boot,
          n_success_boot = boot_inference$n_success_boot,
          boot_error_inds = boot_inference$error_inds,
-         boot_na_list =boot_inference$ boot_na_list,
+         boot_na_list =boot_inference$boot_na_list,
          alpha = alpha,
          call = call)
 
-    if(!is.list(marginalizing_dist) && marginalizing_dist == "matched"){
-        out$matched_data <- original$matched_data
-        out$matched_adata <- original$matched_adata
-        out$replace <- matched_dist_options$replace
-        out$seed <- matched_dist_options$seed
-        out$pair_censoring <- matched_dist_options$pair_censoring
-    }
     if(return_boot){
         out$boot_samples <- boot_inference$boot_samples
     }
 
-     #for debugging
-     #out$original <- original
-     #out$one_boot_args <- boot_inference$one_boot_args
+     out$method <- "nomatchVE (G-computation)"
+     class(out) <- "vefit"
 
 
     return(out)
