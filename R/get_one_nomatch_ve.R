@@ -1,41 +1,41 @@
-#' Compute VE point estimate
+#' Internal function to compute VE point estimate
 #'
-#' @description This function computes point estimates of vaccine effectiveness
-#' based on the proposed method. Internally called by [nomatchVE] and [one_boot_ve].
+#' @description This is an internal function that performs the actual VE computation.
+#' It is called by [nomatchVE()],[nomatchVE_advanced()], and [one_boot_nomatch()]. Handles
+#' different weighting schemes in a unified way. Users should typically call
+#' these functions rather than calling this function directly.
 #'
-#' @inheritParams nomatchVE
-#' @param return_models Logical:  Should survival models be returned?
-#' @param return_gp_list Logical: Should marginalizing distributions be returned?
-#' @param return_matching Logical: Should matched datasets be returned? Default is
-#' TRUE if marginalizing_dist = "matched" and FALSE otherwise.
+#' @inheritParams nomatchVE_advanced
+
+#' @param return_matching Logical; return matched datasets? Default is
+#'   TRUE if `weighting = "matched"`. When `weighting != "matched"`, this is
+#'   automatically set to `FALSE`.
 #'
-#' @return A list containing the following:
+##' @return List with components:
 #' \describe{
-#'  \item{estimates}{A matrix of estimates where the the columns of the matrix are the cumulative
-#'  incidence/VE terms and the rows are the requested time points for evaluation.}
-#'  \item{model_0, model_1}{If `return_models = TRUE`, the fitted survival models
-#'   for unvaccinated and vaccinated.}
-#'  \item{gp_list}{If `return_gp_list = TRUE`, the list of marginalizing distributions used.}
-#'  \item{matched_data}{If `return_matching = TRUE`, the matched cohort}
-#'  \item{matched_adata}{If `return_matching = TRUE`, the analysis-eligible
-#'   matched cohort}
+#'   \item{estimates}{Matrix: `cuminc_0`, `cuminc_1`, `ve` (rows = timepoints)}
+#'   \item{model_0, model_1}{Fitted Cox models (if `return_models = TRUE`)}
+#'   \item{gp_list}{Marginalizing distributions (if `return_gp_list = TRUE`)}
+#'   \item{matched_data, matched_adata}{Matched datasets (if `weighting = "matched"`)}
 #' }
 #'
+#' @keywords internal
 #' @export
-#'
-get_one_ve <- function(data,
+
+get_one_nomatch_ve <- function(data,
                        outcome_name,
                        event_name,
                        trt_name,
                        time_name,
                        adjust_vars,
-                       marginalizing_dist,
-                       matched_dist_options,
                        times,
                        censor_time,
                        tau,
-                       formula_0,
-                       formula_1,
+                       weighting = c("observed", "custom", "matched"),
+                       custom_weights = NULL,
+                       matched_dist_options = NULL,
+                       formula_0 = NULL,
+                       formula_1 = NULL,
                        return_models = TRUE,
                        return_gp_list = TRUE,
                        return_matching = TRUE){
@@ -44,16 +44,10 @@ get_one_ve <- function(data,
     # 0 - Check inputs/set defaults
     # --------------------------------------------------------------------------
 
-    # handle marginalizing_dist which can be list or string
-    if(is.list(marginalizing_dist)){
-        gp_list <- marginalizing_dist
-        is_observed_marg <-is_matching_marg <- FALSE
-    }else{
-        stopifnot((marginalizing_dist %in% c("observed", "matched")))
-        is_matching_marg <- (marginalizing_dist == "matched")
-        is_observed_marg <- (marginalizing_dist == "observed")
-    }
-
+    weighting <- match.arg(weighting)
+    is_matching_marg <- (weighting == "matched")
+    is_observed_marg <- (weighting == "observed")
+    is_custom_marg <- (weighting == "custom")
     # if matching not applicable, do not return matching info
     if(!is_matching_marg){
         return_matching <- FALSE
@@ -97,8 +91,7 @@ get_one_ve <- function(data,
                                              event_name = event_name,
                                              trt_name = trt_name,
                                              time_name = time_name,
-                                             tau = tau,
-                                             pair_censoring = matched_dist_options$pair_censoring)
+                                             tau = tau)
 
         gp_list <- get_matching_gp(matched_adata = matched_adata,
                                    outcome_name = outcome_name,
@@ -113,6 +106,8 @@ get_one_ve <- function(data,
                                    time_name = time_name,
                                    adjust_vars = adjust_vars,
                                    tau = tau)
+    }else if(is_custom_marg){
+        gp_list <- custom_weights
     }
 
 
