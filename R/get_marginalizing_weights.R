@@ -1,3 +1,44 @@
+#' Estimate observed marginalizing distributions for G-computation
+#'
+#' @description
+#' Computes empirical probability distributions used to marginalize predictions over
+#' observed exposure timing and covariate patternss:
+#' - \eqn{g(d \mid x)}: the distribution of exposure times within each covariate subgroup
+#'  of exposed individuals who remain at risk `tau` days after exposure.
+#' - \eqn{p(x)}: the distribution of covariates among exposed individuals
+#'   who remain at risk `tau` days after exposure.
+#'
+#' Most users do not need to call this function directly — it is called
+#' internally by [nomatchVE()]. It can be useful for:
+#' - Creating or understanding custom marginalizing distributions
+#' - Diagnosing weighting or estimation issues
+#'
+#' @inheritParams get_gp
+#'
+#' @return A list with two data frames:
+#' - `g_dist`: covariate-conditional exposure time  probabilities (\eqn{g(d \mid x)})
+#' - `p_dist`: covariate probabilities (\eqn{p(x)})
+#'
+#' Each data frame includes a `group_name` column identifying the covariate
+#' subgroup, the columns for variables in `adjust_vars`, and a `prob` column
+#' with empirical probabilities. `g_dist` additionally includes a `<time_name>`
+#' column for exposure timing.
+#'
+#'
+#' @export
+#' @examples
+#' weights <- get_observed_weights(simdata, "Y", "V", "D_obs",
+#'                                    c("x1", "x2"), tau = 14)
+#' str(weights)
+#'
+get_observed_weights <- function(data, outcome_name, trt_name,
+                            time_name, adjust_vars, tau){
+
+    get_gp(data, outcome_name, trt_name, time_name, adjust_vars, tau)
+
+}
+
+
 #' Estimate the marginalizing distribution in the observed or matched analysis-eligible
 #' populations.
 #'
@@ -5,9 +46,9 @@
 #' `get_observed_gp` returns marginalizing distributions  based on the original observed data
 #' `get_matching_gp` returns marginalizing distributions based on the matched-analysis data
 #'
-#' @inheritParams nomatchVE
+#' @inheritParams get_gp
 #' @return A list of two data frames containing the marginalizing distributions returned from calls to [get_gp()]
-#' @export
+#' @keywords internal
 #'
 get_observed_gp <- function(data, outcome_name, trt_name,
                                             time_name, adjust_vars, tau){
@@ -37,6 +78,7 @@ get_matching_gp <- function(matched_adata, outcome_name, trt_name,
 #' @inheritParams  nomatchVE
 #' @param df A data frame representing the target population for the estimated distributions
 #' * typically, population involves the "analysis-eligible" subset of a given data source
+#' @param tau Numeric. Only vaccinated who are at-risk tau days after vaccination are included.
 #'
 #' @return A list of the following:
 #' \describe{
@@ -48,38 +90,39 @@ get_matching_gp <- function(matched_adata, outcome_name, trt_name,
 #' each variable in `adjust_vars`}
 #' }
 #'
-#'
-#' @export
-#'
+#'@keywords internal
 get_gp <- function(df, outcome_name, trt_name, time_name, adjust_vars, tau){
-    gp_data <-subset(df, (df[[outcome_name]] - df[[time_name]]) > tau  &
-                         df[[trt_name]] == 1)
+    # Single subset operation
+    gp_data <- df[(df[[outcome_name]] - df[[time_name]]) > tau & df[[trt_name]] == 1, ]
 
-    #Define and create covariate groups
-    covariate_groups <- split(gp_data, gp_data[,adjust_vars], drop = TRUE)
-    key <- unique(gp_data[,adjust_vars])
-    key$group_name  <- apply(key, 1, \(x) paste(trimws(x), collapse = "."))
+    if (nrow(gp_data) == 0L) return(list(g_dist = data.frame(), p_dist = data.frame()))
 
-    #Compute probabilities
-    get_empirical_prob <- function(x){
-        data.frame(value = sort(unique(x)),
-                   prob = as.numeric(prop.table(table(x))))
-    }
+    # Create group_name- efficient because interaction() is vectorized
+    gp_data$group_name <- do.call(interaction, c(gp_data[adjust_vars], sep = ".", drop = TRUE))
 
-    g_dist <- lapply(seq_along(covariate_groups), \(i){
-        group <- covariate_groups[[i]]
-        prob <- cbind(names(covariate_groups)[i], get_empirical_prob(group[[time_name]]))
-        names(prob) <- c("group_name", time_name, "prob")
-        prob}
-    ) |> stats::setNames(names(covariate_groups))
+    # Compute g_dist: P(time | covariates)
+    xt <- with(gp_data, xtabs(~ group_name + gp_data[[time_name]]))
+    g_prop <- prop.table(xt, 1)
+    g_dist <- as.data.frame(as.table(g_prop), stringsAsFactors = FALSE)
+    names(g_dist) <- c("group_name", time_name, "prob")
+    g_dist[[time_name]] <- as.numeric(g_dist[[time_name]])
+    g_dist <- g_dist[g_dist$prob > 0, ]
+    #order columns
+    g_dist <- g_dist[order(g_dist$group_name, g_dist[[time_name]]),]
 
-    p_dist <- sapply(covariate_groups, \(group) nrow(group)/nrow(gp_data))
+    # Compute p_dist: P(covariates)
+    p_dist <- as.data.frame(prop.table(table(group_name)))
+    names(p_dist) <- c("group_name", "prob")
+    #order columns
+    p_dist <- p_dist[order(p_dist$group_name),]
 
-    #Tidy probabilities to data frames
-    g_dist_df <- do.call(rbind, c(g_dist, make.row.names = FALSE))
-    p_dist_df <- data.frame(group_name = names(p_dist), prob = unname(p_dist))
+    # Create key for covariate values (only unique combinations)
+    key <- unique(gp_data[, c("group_name", adjust_vars)])
 
-    g_dist_clean <- merge(g_dist_df, key)
-    p_dist_clean <- merge(p_dist_df, key)
-    list(g_dist = g_dist_clean, p_dist = p_dist_clean)
+    # Single merge for each output
+    g_dist_clean <- merge(g_dist, key, by = "group_name")
+    p_dist_clean <- merge(p_dist, key, by = "group_name")
+
+    list(g_dist = g_dist_clean[, c("group_name", adjust_vars, time_name, "prob")],
+         p_dist = p_dist_clean[, c("group_name", adjust_vars, "prob")])
 }
