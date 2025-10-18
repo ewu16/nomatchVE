@@ -1,100 +1,158 @@
-#' Compute day- and covariate- specific risks psi_v(t0; d, x) at a specific time point
+#' Compute day- and covariate- specific cumulative incidences
 #'
-#' @description Given the fitted survival models, compute estimates of psi_v(t0; d, x)
-#' for all d,x of interest at a given timepoint t0
+#' @description
+#'  Wrapper that calls internal functions for predicting cumulative incidences from
+#'  fitted hazard models. Returns the predicted exposure-specific cumulative
+#'  incidences side by side for each time- and covariate- pair in `newdata`.
 #'
-#' @inheritParams nomatchVE
-#' @param t0 A timepoint at which cumulative incidence should be evaluated
-#' @param fit_0 A fitted survival model for the unvaccinated group
-#' @param fit_1 A fitted survival model for the vaccinated group
-#' @param gp_list List of marginalizing distributions. Used to determine which x, d
-#' will be used for prediction
+#' @details
+#' Definitions of the cumulative incidences returned:
+#' \deqn{\psi_0(t_0; d,x) = 1 - S_0(d+t_0; x)\,/\,S_0(d+\tau; x)}
+#' \deqn{\psi_1(t_0; d,x) = 1 - S_1(t_0; d,x)\,/\,S_1(\tau; d,x)}
 #'
-#' @return A data frame containing predicted risk for each (d,x) of interest under
-#' vaccine and no vaccine
+#' where \eqn{d} represents exposure time, \eqn{x} represents covariates, and
+#' \eqn{S_v} represents the survival probability from hazard model for exposure \eqn{v}.
+#'
+#' @param fit_0 A fitted model returned from [fit_model_0()]
+#' @param fit_1 A fitted model returned from [fit_model_1()]
+#' @param time_name Name of the time-to-exposure variable  in `newdata`.
+#'   Used to compute \eqn{\psi_0(t_0; d,x)} where \eqn{d + \tau} and \eqn{d + t_0} are needed.
+#' @param tau Delay period
+#' @param t0  Time since exposure at which to evaluate cumulative incidence.
+#' @param newdata New data at which to do predictions.
+#'
+#' @return A data frame with one row per row of `newdata` with the predicted
+#' cumulative incidences and component survival probabilities:
+#' - `psi_0_dx`, `surv_0_d_plus_tau`, `surv_0_d_plus_t0`
+#' - `psi_1_dx`, `surv_1_tau`, `surv_1_t0`
+
+#' @seealso [predict_from_model_0()], [predict_from_model_1()]
 #' @export
 #'
-#'
-
-compute_psi_d <- function(fit_0, fit_1, time_name, t0, tau, gp_list){
-
-    pred_0 <- predict_from_model_0(fit_0, time_name, t0, tau, gp_list)
-    pred_1 <- predict_from_model_1(fit_1, time_name, t0, tau, gp_list)
-    psi_d <- merge(pred_0, pred_1)
-    psi_d
+compute_psi_dx_t0 <- function(fit_0, fit_1, time_name, t0, tau, newdata){
+    #check new data argument
+    pred_0 <- predict_from_model_0(fit_0, time_name, t0, tau, newdata)
+    pred_1 <- predict_from_model_1(fit_1, time_name, t0, tau, newdata)
+    psi_dx <- merge(pred_0, pred_1)
+    psi_dx
 }
 
-
-
-#' Compute psi_0(t0; d, x) and psi_1(t0; d,x ), respectively.
+#' Compute conditional cumulative incidences from fitted Cox models
 #'
 #' @description These functions compute the conditional day- and covariate-specific cumulative
-#' incidences.
-#' `predict_from_model_0()` calculates `psi_0(t0; d, x)` by using x as covariates in prediction and obtaining survival
-#' at d + t0 and d + tau days
-#' `predict_from_model_1()` calculates `psi_1(t0; d, x)` by using x and d as covariates in prediction
-#' and obtaining survival at t0 days
+#' incidence for each row of `newdata`.
+#'
+#' - `predict_from_model_0()` computes \eqn{\psi_0(t_0; d, x) = 1 - S_0(d+t_0 \mid x)/S_0(d+\tau \mid x)}
+#'   by calling `predict(fit_0, newdata, type = "survival")` at times
+#' `d + t0` and `d + tau`.
+#'
+#' `predict_from_model_1()` computes \eqn{\psi_1(t_0; d, x) = 1 - S_1(t_0 \mid d, x)/S_1(\tau \mid d, x)}
+#'  `by calling `predict(fit_1, newdata, type = "survival")` at times
+#'  `t0` and `tau`.
 #'
 #'
-#' @inheritParams compute_psi_d
+#' @return The `newdata` data frame with three additional columns:
+#'  -  `predict_from_model_0()`: `surv_0_d_plus_tau`, `surv_0_d_plus_t0`, and `psi_0_dx`
+#'  -  `predict_from_model_1()`: `surv_1_tau`, `surv_1_t0`, and `psi_1_dx`
 #'
-#' @return A data frame of predictions for day and covariate groups in in `gp_list`
+
+#' @keywords internal
 #' @export
 #'
-predict_from_model_0 <- function(fit_0, time_name, t0, tau, gp_list){
+#' @examples
+#' # Fit hazard model under no vaccine
+#' fit_0 <- fit_model_0(
+#'   data = simdata,
+#'   outcome_name = "Y",
+#'   event_name = "event",
+#'   trt_name = "V",
+#'   time_name = "D_obs",
+#'   adjust_vars = adjust_vars
+#'  )
+#'
+#' # Fit hazard model under vaccine
+#' fit_1 <- fit_model_1(
+#'   data = simdata,
+#'   outcome_name = "Y",
+#'   event_name = "event",
+#'   trt_name = "V",
+#'   time_name = "D_obs",
+#'   tau = tau
+#'  )
+#'
+#'
+#' # Define dataset for prediction,
+#' # e.g. vaccinated indiviudals at risk tau days after vaccination
+#' newdata <- simdata[simdata$V == 1 & (simdata$Y - simdata$D_obs) > 14,]
+#'
+#' # Predict from hazard model under no vaccine
+#' predict_from_model_0(
+#'     fit_0,
+#'     time_name = "D_obs",
+#'     t0 = 90,
+#'     tau = 14,
+#'     newdata = newdata
+#' )
+#'
+#' # Predict from hazard model under vaccine
+#' predict_from_model_1(
+#'   fit_1,
+#'   time_name = "D_obs",
+#'   t0 = 90,
+#'   tau = 14,
+#'   newdata = newdata
+#' )
 
-    # data_0_covars <- stats::get_all_vars(formula(delete.response(terms(fit_0))), fit_0$data)
-    # unique_vals
-    # new_data_0 <- expand.grid(data_0_covars)
-    #pred_0 <- subset(gp_list$g_dist, select = -group_name)
-    pred_0 <- gp_list$g_dist
-    d_plus_tau <- d_plus_t0 <- pred_0
-    d_plus_tau$Y <- pred_0[[time_name]] + tau
-    d_plus_t0$Y <- pred_0[[time_name]] + t0
+predict_from_model_0 <- function(fit_0, time_name, t0, tau, newdata){
+    surv_vars <- all.vars(formula(fit_0)[[2]])
+    time_var <- surv_vars[1]
+    event_var <- surv_vars[2]
 
-    d_plus_tau$event <- 0
-    d_plus_t0$event <- 0
+    # Build newdata to predict survival at d+tau and d+t0
+    newdata_d_plus_tau              <- newdata
+    newdata_d_plus_tau[[time_var]]  <- newdata[[time_name]] + tau
+    newdata_d_plus_tau[[event_var]] <- 0
 
-    pred_0$surv_d_plus_tau <-stats::predict(fit_0, d_plus_tau, type = "survival")
-    pred_0$surv_d_plus_t0 <- stats::predict(fit_0, d_plus_t0,  type = "survival")
-    pred_0$risk_0 <- 1 - pred_0$surv_d_plus_t0/pred_0$surv_d_plus_tau
+    newdata_d_plus_t0               <- newdata
+    newdata_d_plus_t0[[time_var]]   <- newdata[[time_name]] + t0
+    newdata_d_plus_t0[[event_var]]  <- 0
 
-    ##remove extra columns from g_dist not needed for prediction
-    pred_0$group_name <- NULL
-    pred_0$prob <- NULL
+    # Predict and store survival predictions
+    pred_0 <- newdata
+    pred_0$surv_0_d_plus_tau <-stats::predict(fit_0, newdata_d_plus_tau, type = "survival")
+    pred_0$surv_0_d_plus_t0 <- stats::predict(fit_0, newdata_d_plus_t0,  type = "survival")
+    pred_0$psi_0_dx <- 1 - pred_0$surv_0_d_plus_t0/pred_0$surv_0_d_plus_tau
 
     pred_0
 }
 
 #' @rdname predict_from_model_0
-predict_from_model_1 <- function(fit_1, time_name, t0, tau, gp_list){
-    #pred_1 <- subset(gp_list$g_dist, select = -group_name)
-    pred_1 <- gp_list$g_dist
-    time_tau <- time_t0 <- pred_1
-    time_tau$T1_censored <-  tau
-    time_t0$T1_censored <-  t0
+#'
+predict_from_model_1 <- function(fit_1, time_name, t0, tau, newdata){
+    surv_vars <- all.vars(formula(fit_1)[[2]])
+    time_var <- surv_vars[1]
+    event_var <- surv_vars[2]
 
-    time_tau$event <- 0
-    time_t0$event <- 0
+    # Build newdata to predict survival at tau and t0
+    newdata_tau              <- newdata
+    newdata_tau[[time_var]]  <- tau
+    newdata_tau[[event_var]] <- 0
+
+    newdata_t0               <- newdata
+    newdata_t0[[time_var]]   <- t0
+    newdata_t0[[event_var]]  <- 0
 
     #This should always be 1 but sometimes returns NaN so just hard code
-    surv_tau <- stats::predict(fit_1, time_tau, type = "survival")
-    if(any(surv_tau[is.finite(surv_tau)] != 1)){
+    surv_1_tau <- stats::predict(fit_1, newdata_tau, type = "survival")
+    if(any(surv_1_tau[is.finite(surv_1_tau)] != 1)){
         stop("Survival at tau not 1")
     }
-    pred_1$surv_tau <- 1
-    pred_1$surv_t0 <-  stats::predict(fit_1, time_t0,  type = "survival")
-    pred_1$risk_1 <- 1 - pred_1$surv_t0/pred_1$surv_tau
 
-
-    if(any(is.nan(pred_1$risk_1))){
-        print("NaNs for predicted risk_1")
-        print(pred_1[is.na(pred_1$risk_1),])
-    }
-
-    ##remove extra columns from g_dist not needed for prediction
-    pred_1$group_name <- NULL
-    pred_1$prob <- NULL
+    # Predict survivals
+    pred_1 <- newdata
+    pred_1$surv_1_tau <- 1
+    pred_1$surv_1_t0 <-  stats::predict(fit_1, newdata_t0,  type = "survival")
+    pred_1$psi_1_dx <- 1 - pred_1$surv_1_t0/pred_1$surv_1_tau
 
     pred_1
 }
