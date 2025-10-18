@@ -1,19 +1,44 @@
-#' Internal function to compute VE point estimate
+#' Internal function to compute cumulative incidence and effect measures
 #'
-#' @description This is an internal function that performs the actual VE computation.
-#' It is called by [nomatchVE()],[nomatchVE_advanced()], and [one_boot_nomatch()]. Handles
-#' different weighting schemes in a unified way. Users should typically call
-#' these functions rather than calling this function directly.
+#' @description This is an internal function that performs the actual estimation
+#' of cumulative incidences and derived effect measures
+#' using the G-computation style approach. It is called by [nomatchVE()] and [one_boot_nomatch()].
+#' Users should typically call these functions rather than calling this function directly.
+#' For historical reasons, this function handles more complex inputs than
+#' exposed in the `nomatchVE()` interface. In particular, it includes
+#' an options to
+#' - set censor time in hazard model for the exposed
+#' - weight by the weights from a matched dataset and
+#' - provide hazard model formulas or prefit objects
 #'
-#' @inheritParams nomatchVE_advanced
-
+#'
+#' @inheritParams nomatchVE
+#'
+#' @param censor_time Time after exposure at which exposed
+#'   individuals are administratively censored during model fitting. Default:
+#'   `max(times)`. This limits estimation to the observed  period of interest and
+#'   prevents extrapolation beyond the largest evaluation time.
+#'   Typically, users should leave this at the default.
+#' @param weighting Character string specifying how to construct marginalizing weights.
+#'   One of:
+#'   * `"observed"` (default): estimate weights from the observed data;
+#'   * `"custom"`: use user-specified weights provided via `custom_weights` argument;
+#' @param formula_0 Either a formula or a pre-fit `coxph` model object for the
+#'   unvaccinated hazard (original time scale). If a fitted model is provided,
+#'   it will be used directly instead of fitting a new model. Intended for advanced use.
+#' @param formula_1 Either a formula or a pre-fit  `coxph` model object for the
+#'   vaccinated hazard (time-since-exposure scale). If a fitted model is provided,
+#'   it will be used directly instead of fitting a new model. Intended for advanced use.
+#' @param return_gp_list Logical; return marginalizing weights? Default is
+#'   TRUE.
 #' @param return_matching Logical; return matched datasets? Default is
 #'   TRUE if `weighting = "matched"`. When `weighting != "matched"`, this is
 #'   automatically set to `FALSE`.
 #'
 ##' @return List with components:
 #' \describe{
-#'   \item{estimates}{Matrix: `cuminc_0`, `cuminc_1`, `ve` (rows = timepoints)}
+#'   \item{estimates}{List of matrices: `cuminc_0`, `cuminc_1`, `risk_ratio`, `vaccine_effectiveness`
+#'   where each matrix has one row per timepoint}
 #'   \item{model_0, model_1}{Fitted Cox models (if `return_models = TRUE`)}
 #'   \item{gp_list}{Marginalizing distributions (if `return_gp_list = TRUE`)}
 #'   \item{matched_data, matched_adata}{Matched datasets (if `weighting = "matched"`)}
@@ -28,95 +53,55 @@ get_one_nomatch_ve <- function(data,
                        trt_name,
                        time_name,
                        adjust_vars,
-                       times,
-                       censor_time,
                        tau,
-                       weighting = c("observed", "custom", "matched"),
+                       times,
+                       censor_time = max(times),
+                       effect_measure = c("vaccine_effectiveness", "risk_ratio"),
+                       weighting = c("observed", "custom"),
                        custom_weights = NULL,
-                       matched_dist_options = NULL,
-                       formula_0 = NULL,
-                       formula_1 = NULL,
                        return_models = TRUE,
-                       return_gp_list = TRUE,
-                       return_matching = TRUE){
+                       return_gp_list = TRUE){
 
     # --------------------------------------------------------------------------
     # 0 - Check inputs/set defaults
     # --------------------------------------------------------------------------
 
+    #Normalize user inputs
+    effect_measure <- match.arg(effect_measure)
     weighting <- match.arg(weighting)
-    is_matching_marg <- (weighting == "matched")
-    is_observed_marg <- (weighting == "observed")
-    is_custom_marg <- (weighting == "custom")
-    # if matching not applicable, do not return matching info
-    if(!is_matching_marg){
-        return_matching <- FALSE
-    }
+
 
     # --------------------------------------------------------------------------
     # 1 - Fit survival models
     # --------------------------------------------------------------------------
-    if(methods::is(formula_0, "coxph")){
-        fit_0 <-  formula_0
-    }else{
-        fit_0 <- fit_model_0(data, outcome_name, event_name, trt_name, time_name,
-                             adjust_vars, formula_0)
-    }
+    fit_0 <- fit_model_0(data, outcome_name, event_name, trt_name, time_name,
+                         adjust_vars)
 
-    if(methods::is(formula_1, "coxph")){
-        fit_1 <- formula_1
-    }else{
-        # Note: model_1 depends on t0 (censoring) and tau (subset)
-        fit_1 <- fit_model_1(data, outcome_name, event_name, trt_name, time_name,
-                             adjust_vars, censor_time, tau, formula_1)
-    }
-    # --------------------------------------------------------------------------
-    # 2 - Get/fit marginalizing distributions
-    # --------------------------------------------------------------------------
-    if(is_matching_marg){
-        if(is.null(matched_dist_options$matched_data)){
-            print("Creating matched cohort")
-            matched_cohort <- match_rolling_cohort(data = data,
-                                                   outcome_name = outcome_name,
-                                                   trt_name = trt_name,
-                                                   time_name = time_name,
-                                                   matching_vars = adjust_vars,
-                                                   id_name = matched_dist_options$id_name,
-                                                   replace = matched_dist_options$replace,
-                                                   seed = matched_dist_options$seed)
-            matched_dist_options$matched_data <- matched_cohort[[1]]
-        }
-        matched_adata <- clean_matched_data(matched_dist_options$matched_data,
-                                             outcome_name = outcome_name,
-                                             event_name = event_name,
-                                             trt_name = trt_name,
-                                             time_name = time_name,
-                                             tau = tau)
+    # Note: model_1 depends on censor time and tau (subset)
+    fit_1 <- fit_model_1(data, outcome_name, event_name, trt_name, time_name,
+                         adjust_vars, tau, censor_time)
 
-        gp_list <- get_matching_gp(matched_adata = matched_adata,
-                                   outcome_name = outcome_name,
-                                   trt_name = trt_name,
-                                   time_name = time_name,
-                                   adjust_vars = adjust_vars,
-                                   tau = tau)
-    }else if(is_observed_marg){
+    # --------------------------------------------------------------------------
+    # 2 - Get/fit marginalizing distributions depending on weighting type
+    # --------------------------------------------------------------------------
+    if(identical(weighting, "observed")){
         gp_list <- get_observed_gp(data = data,
                                    outcome_name = outcome_name,
                                    trt_name = trt_name,
                                    time_name = time_name,
                                    adjust_vars = adjust_vars,
                                    tau = tau)
-    }else if(is_custom_marg){
-        gp_list <- custom_weights
+    }else if(identical(weighting, "custom")){
+        gp_list <- canonicalize_weights(custom_weights)
     }
-
 
     # --------------------------------------------------------------------------
     # 3 - Compute VE
     # --------------------------------------------------------------------------
-
-    estimates <-compute_ve(fit_0, fit_1, time_name, times, tau, gp_list)
-
+    cuminc <- compute_psi_bar_times(fit_0, fit_1, time_name, times, tau, gp_list$g_weights, gp_list = gp_list)
+    rr <-  cuminc[, "cuminc_1"]/cuminc[, "cuminc_0"]
+    ve <- 1 - rr
+    estimates <- cbind(cuminc, "risk_ratio" = rr, "vaccine_effectiveness" = ve)
 
     # --------------------------------------------------------------------------
     # Return items
@@ -130,10 +115,7 @@ get_one_nomatch_ve <- function(data,
     if(return_gp_list){
         out$gp_list <- gp_list
     }
-    if(return_matching){
-        out$matched_data <-  matched_dist_options$matched_data
-        out$matched_adata <- matched_adata
-    }
+
 
     return(out)
 
