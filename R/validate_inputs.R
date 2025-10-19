@@ -92,166 +92,123 @@ validate_data <- function(data, outcome_name, event_name, trt_name, time_name, a
 #' Validate custom marginalizing weights
 #'
 #' @description
-#' Internal validation function to check that user-supplied marginalizing
-#' weights (`g_dist` and `p_dist`) are properly formatted with required
-#' columns and valid probability values.
+#' Internal validation function that checks whether a user-supplied
+#' list of marginalizing weights (`g_weights` and `p_weights`) has the required
+#' structure and valid probability values.
 #'
-#' @param custom_weights Either a character string or a list containing
-#'   `g_dist` and `p_dist` data frames. Only list inputs are validated by
-#'   this function.
-#' @param time_name Character string specifying the vaccination time variable name
-#' @param adjust_vars Character vector of covariate names
+#' @param custom_weights List containing `g_weights` and `p_weights` data frames.
+#' @param time_name Character; name of the vaccination time variable.
+#' @param adjust_vars Character vector of covariate names.
 #'
-#' @return Invisibly returns `NULL` if all checks pass. Throws an error with
-#'   descriptive message if any validation fails.
-#'
+#' @return Invisibly returns `NULL` if all checks pass. Throws an error with a
+#' descriptive message otherwise.
 #' @keywords internal
 #' @noRd
 validate_marginalizing_weights <- function(custom_weights, time_name, adjust_vars) {
+    # Check structure
+    if (!is.list(custom_weights))
+        stop("`custom_weights` must be a list containing 'g_weights' and 'p_weights'.", call. = FALSE)
+    if (!all(c("g_weights", "p_weights") %in% names(custom_weights)))
+        stop("List must include components 'g_weights' and 'p_weights'.", call. = FALSE)
 
-    # Only validate if it's a list (custom weights)
-    # Character values are validated by match.arg() in main function
-    if(!is.list(custom_weights)) {
-        stop("Custom marginalizing weights must be a list")
+    g <- custom_weights$g_weights
+    p <- custom_weights$p_weights
+
+    if (!is.data.frame(g) || !is.data.frame(p))
+        stop("'g_weights' and 'p_weights' must be data frames.", call. = FALSE)
+
+    # Required columns
+    required_g <- c(time_name, "prob", adjust_vars)
+    required_p <- c("prob", adjust_vars)
+
+    check_missing_cols <- function(df, required, name) {
+        missing <- setdiff(required, names(df))
+        if (length(missing))
+            stop(sprintf("`%s` missing required columns: %s",
+                         name, paste(missing, collapse = ", ")), call. = FALSE)
     }
 
-    # Check list structure
-    if(!all(c("g_dist", "p_dist") %in% names(custom_weights))) {
-        stop(
-            "Custom marginalizing weights must be a list with 'g_dist' and 'p_dist'.\n",
-            "Found components: ", paste(names(custom_weights), collapse = ", "),
-            call. = FALSE
-        )
-    }
-
-    g_dist <- custom_weights$g_dist
-    p_dist <- custom_weights$p_dist
-
-    # Validate structure
-    if(!is.data.frame(g_dist) || !is.data.frame(p_dist)) {
-        stop("Both g_dist and p_dist must be data frames", call. = FALSE)
-    }
-
-    # Check required columns
-    required_g <- c("group_name", time_name, "prob", adjust_vars)
-    missing_g <- setdiff(required_g, names(g_dist))
-    if(length(missing_g) > 0) {
-        stop(
-            "g_dist missing columns: ", paste(missing_g, collapse = ", "),
-            call. = FALSE
-        )
-    }
-
-    required_p <- c("group_name", "prob", adjust_vars)
-    missing_p <- setdiff(required_p, names(p_dist))
-    if(length(missing_p) > 0) {
-        stop(
-            "p_dist missing columns: ", paste(missing_p, collapse = ", "),
-            call. = FALSE
-        )
-    }
+    check_missing_cols(g, required_g, "g_weights")
+    check_missing_cols(p, required_p, "p_weights")
 
     # Validate probabilities
-    validate_g_dist_probabilities(g_dist)
-    validate_p_dist_probabilities(p_dist)
+    validate_prob_column(g$prob, "g_weights")
+    validate_prob_column(p$prob, "p_weights")
+
+    # Check sums
+    if (any(abs(tapply(g$prob, g[adjust_vars], sum) - 1) > 1e-6))
+        stop("In 'g_weights', probabilities must sum to 1 within each group.", call. = FALSE)
+
+    if (abs(sum(p$prob) - 1) > 1e-6)
+        stop("In 'p_weights', probabilities must sum to 1.", call. = FALSE)
 
     invisible(NULL)
 }
 
-#' Validate g_dist probabilities sum to 1 within each covariate group
-#'
-#' @param g_dist Data frame with columns `group_name`, `prob`, and covariate columns
-#'
-#' @return Invisibly returns `NULL` if all checks pass. Throws an error if
-#'   probabilities don't sum to 1 within groups or contain invalid values.
-#'
+#' Validate numeric probability vector
 #' @keywords internal
 #' @noRd
-validate_g_dist_probabilities <- function(g_dist) {
+validate_prob_column <- function(prob, name) {
+    if (!is.numeric(prob))
+        stop(sprintf("'prob' column in '%s' must be numeric.", name), call. = FALSE)
+    if (any(is.na(prob)))
+        stop(sprintf("'prob' column in '%s' contains missing values.", name), call. = FALSE)
+    if (any(prob < 0 | prob > 1))
+        stop(sprintf("'prob' column in '%s' must be between 0 and 1.", name), call. = FALSE)
+    invisible(NULL)
+}
 
-    # Check probabilities are numeric
-    if(!is.numeric(g_dist$prob)) {
-        stop("'prob' column in 'g_dist' must be numeric", call. = FALSE)
+# g <- weights$g_weights
+# g$prob[g$x2 == 5] <- 0
+# p_weights <- weights$p_weights
+# p_weights$prob[p_weights$x2 == 5] <- NA
+# p <- p_weights
+
+canonicalize_weights <- function(weights, time_name, adjust_vars) {
+    g <- weights$g_weights
+    p <- weights$p_weights
+
+    # Rename prob columns if needed
+    if (!"prob_g" %in% names(g)) names(g)[names(g)=="prob"] <- "prob_g"
+    if (!"prob_p" %in% names(p)) names(p)[names(p)=="prob"] <- "prob_p"
+
+    # Drop rows with non-positive weight
+    gp <- merge(g, p, all = TRUE)
+    prob_g_zero <- gp$prob_g == 0 & !is.na(gp$prob_g)
+    prob_p_zero <- gp$prob_p == 0 & !is.na(gp$prob_p)
+
+    gp <- gp[!prob_g_zero & !prob_p_zero,]
+
+    if(anyNA(gp$prob_g * gp$prob_p)){
+        stop("Covariate groups differ between g_weights and p_weights.", call. = FALSE)
     }
+    # Add group_id
+    groups <- unique(gp[adjust_vars])
+    groups <- groups[do.call(order, groups[adjust_vars]), , drop = FALSE]
+    groups$group_id <- seq_len(nrow(groups))
 
-    # Check probabilities are between 0 and 1
-    if(any(g_dist$prob < 0 | g_dist$prob > 1, na.rm = TRUE)) {
-        stop("'prob' in 'g_dist' must be between 0 and 1", call. = FALSE)
-    }
+    g <- merge(groups, g, all.x = TRUE)
+    p <- merge(groups, p, all.x = TRUE)
 
-    # Check for missing probabilities
-    if(any(is.na(g_dist$prob))) {
-        stop("'prob' in 'g_dist' contains missing values", call. = FALSE)
-    }
+    # Return canonical structure
+    list(
+        g_weights = g[, c("group_id", adjust_vars, time_name, "prob_g"), drop = FALSE],
+        p_weights = p[, c("group_id", adjust_vars, "prob_p"), drop = FALSE]
+    )
+}
 
-    # Calculate sum of probabilities within each group
-    prob_sums <- tapply(g_dist$prob, g_dist$group_name, sum)
 
-    # Check if sums are approximately 1 (allow small floating point errors)
-    tolerance <- 1e-6
-    bad_groups <- names(prob_sums)[abs(prob_sums - 1) > tolerance]
 
-    if(length(bad_groups) > 0) {
-        # Show details for first few problematic groups
-        n_show <- min(3, length(bad_groups))
-        examples <- paste0(
-            bad_groups[1:n_show],
-            " (sum=", round(prob_sums[bad_groups[1:n_show]], 4), ")",
-            collapse = ", "
-        )
-        if(length(bad_groups) > n_show) {
-            examples <- paste0(examples, ", ...")
-        }
-
+#' @keywords internal
+check_reserved_vars <- function(vars, reserved_vars, vars_label) {
+    conflicts <- intersect(reserved_vars, vars)
+    if (length(conflicts) > 0) {
         stop(
-            "In 'g_dist', probabilities must sum to 1 within each covariate group.\n",
-            "Groups with incorrect sums: ", examples, "\n",
-            "Total problematic groups: ", length(bad_groups),
+            paste(vars_label, " contain reserved variable names: "),
+            paste(conflicts, collapse = ", "),
+            "\nPlease rename these variables before fitting the model.",
             call. = FALSE
         )
     }
-
-    invisible(NULL)
 }
 
-
-#' Validate p_dist probabilities sum to 1
-#'
-#' @param p_dist Data frame with columns `group_name`, `prob`, and covariate columns
-#'
-#' @return Invisibly returns `NULL` if all checks pass. Throws an error if
-#'   probabilities don't sum to 1 or contain invalid values.
-#'
-#' @keywords internal
-#' @noRd
-validate_p_dist_probabilities <- function(p_dist) {
-
-    # Check probabilities are numeric
-    if(!is.numeric(p_dist$prob)) {
-        stop("'prob' column in 'p_dist' must be numeric", call. = FALSE)
-    }
-
-    # Check probabilities are between 0 and 1
-    if(any(p_dist$prob < 0 | p_dist$prob > 1, na.rm = TRUE)) {
-        stop("'prob' in 'p_dist' must be between 0 and 1", call. = FALSE)
-    }
-
-    # Check for missing probabilities
-    if(any(is.na(p_dist$prob))) {
-        stop("'prob' in 'p_dist' contains missing values", call. = FALSE)
-    }
-
-    # Check total sum
-    total_prob <- sum(p_dist$prob)
-    tolerance <- 1e-6
-
-    if(abs(total_prob - 1) > tolerance) {
-        stop(
-            "In 'p_dist', probabilities must sum to 1.\n",
-            "Current sum: ", round(total_prob, 6),
-            call. = FALSE
-        )
-    }
-
-    invisible(NULL)
-}
