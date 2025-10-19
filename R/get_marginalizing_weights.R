@@ -1,28 +1,24 @@
-#' Estimate observed marginalizing distributions for G-computation
+#' Estimate observed distributions of exposure times and covariates
 #'
-#' @description
-#' Computes empirical probability distributions used to marginalize predictions over
-#' observed exposure timing and covariate patternss:
+#' @description Computes two empirical probability distributions used to marginalize
+#' time- and covariate- specific cumulative incidences:
 #' - \eqn{g(d \mid x)}: the distribution of exposure times within each covariate subgroup
-#'  of exposed individuals who remain at risk `tau` days after exposure.
+#' of exposed individuals who remain at risk `tau` days after exposure.
 #' - \eqn{p(x)}: the distribution of covariates among exposed individuals
-#'   who remain at risk `tau` days after exposure.
+#' who remain at risk `tau` days after exposure.
 #'
-#' Most users do not need to call this function directly — it is called
-#' internally by [nomatchVE()]. It can be useful for:
-#' - Creating or understanding custom marginalizing distributions
-#' - Diagnosing weighting or estimation issues
+#' Called internally by [nomatchVE()]. Provided as an example of the
+#' structure needed if a user passes in `custom_weights`.
 #'
 #' @inheritParams get_gp
 #'
 #' @return A list with two data frames:
-#' - `g_dist`: covariate-conditional exposure time  probabilities (\eqn{g(d \mid x)})
-#' - `p_dist`: covariate probabilities (\eqn{p(x)})
+#' - `g_weights`: covariate-conditional exposure time  probabilities (\eqn{g(d \mid x)})
+#' - `p_weights`: covariate probabilities (\eqn{p(x)})
 #'
-#' Each data frame includes a `group_name` column identifying the covariate
-#' subgroup, the columns for variables in `adjust_vars`, and a `prob` column
-#' with empirical probabilities. `g_dist` additionally includes a `<time_name>`
-#' column for exposure timing.
+#'   Each data frame includes all variables in `adjust_vars`, and a `prob` column
+#'   with empirical probabilities.
+#'   `g_weights` additionally includes a `<time_name>` column for exposure times.
 #'
 #'
 #' @export
@@ -34,8 +30,24 @@
 get_observed_weights <- function(data, outcome_name, trt_name,
                             time_name, adjust_vars, tau){
 
-    get_gp(data, outcome_name, trt_name, time_name, adjust_vars, tau)
+    gp_list <- get_gp(data, outcome_name, trt_name, time_name, adjust_vars, tau)
 
+    #Simplify output to be similar to user-provided weights
+    g <- gp_list$g_weights
+    p <- gp_list$p_weights
+
+    # Drop group_id
+    g <- g[, setdiff(names(g), "group_id"), drop = FALSE]
+    p <- p[, setdiff(names(p), "group_id"), drop = FALSE]
+
+    # Rename probability columns back to 'prob'
+    names(g)[names(g) == "prob_g"] <- "prob"
+    names(p)[names(p) == "prob_p"] <- "prob"
+
+    list(
+        g_weights = g[, c(adjust_vars, time_name, "prob"), drop = FALSE],
+        p_weights = p[, c(adjust_vars, "prob"), drop = FALSE]
+    )
 }
 
 
@@ -57,20 +69,6 @@ get_observed_gp <- function(data, outcome_name, trt_name,
 
 }
 
-#' @rdname get_observed_gp
-#' @param matched_adata For `get_matching_gp`, a data frame representing the matched analysis-eligible population
-get_matching_gp <- function(matched_adata, outcome_name, trt_name,
-                                         time_name, adjust_vars, tau){
-    gp_list <- get_gp(df = matched_adata,
-                      outcome_name = paste0(outcome_name, "_matched"),
-                      trt_name = paste0(trt_name, "_d"),
-                      time_name = "d",
-                      adjust_vars = adjust_vars,
-                      tau = tau)
-    #rename d variable to original time_name
-    names(gp_list$g_dist)[which(names(gp_list$g_dist ) == "d")] <- time_name
-    gp_list
-}
 
 
 #' Get empirical probability distributions g(d|x) and p(x) based on input data
@@ -82,11 +80,11 @@ get_matching_gp <- function(matched_adata, outcome_name, trt_name,
 #'
 #' @return A list of the following:
 #' \describe{
-#' \item{g_dist}{A data frame containing the covariate-conditional day probabilities.
-#' Columns include `group_name` identifying the covariate group, `<time_name> specifying the day,
+#' \item{g_weights}{A data frame containing the covariate-conditional day probabilities.
+#' Columns include `group_id` identifying the covariate group, `<time_name> specifying the day,
 #' `prob` specifying the covariate-conditional day probability, and each variables in `adjust_vars`}
-#' \item{p_dist}{A data frame containing the covariate probabilities.
-#' Columns include `group_name` identifying the covariate group,`prob` specifying the covariate probability, and
+#' \item{p_weights}{A data frame containing the covariate probabilities.
+#' Columns include `group_id` identifying the covariate group,`prob` specifying the covariate probability, and
 #' each variable in `adjust_vars`}
 #' }
 #'
@@ -95,34 +93,39 @@ get_gp <- function(df, outcome_name, trt_name, time_name, adjust_vars, tau){
     # Single subset operation
     gp_data <- df[(df[[outcome_name]] - df[[time_name]]) > tau & df[[trt_name]] == 1, ]
 
-    if (nrow(gp_data) == 0L) return(list(g_dist = data.frame(), p_dist = data.frame()))
+    if (nrow(gp_data) == 0L) return(list(g_weights = data.frame(), p_weights = data.frame()))
 
-    # Create group_name- efficient because interaction() is vectorized
-    gp_data$group_name <- do.call(interaction, c(gp_data[adjust_vars], sep = ".", drop = TRUE))
+    # Create group id and merge back into g
+    group_lookup <- unique(gp_data[adjust_vars])
+    group_lookup <- group_lookup[do.call(order, group_lookup[adjust_vars]),]
+    group_lookup$group_id <- seq_len(nrow(group_lookup))
+    gp_data <- merge(gp_data, group_lookup, by = adjust_vars, all.x = TRUE)
 
-    # Compute g_dist: P(time | covariates)
-    xt <- with(gp_data, xtabs(~ group_name + gp_data[[time_name]]))
+    # Compute g_weights: P(time | covariates)
+    xt <- with(gp_data, xtabs(~ group_id + gp_data[[time_name]]))
     g_prop <- prop.table(xt, 1)
-    g_dist <- as.data.frame(as.table(g_prop), stringsAsFactors = FALSE)
-    names(g_dist) <- c("group_name", time_name, "prob")
-    g_dist[[time_name]] <- as.numeric(g_dist[[time_name]])
-    g_dist <- g_dist[g_dist$prob > 0, ]
+    g_weights <- as.data.frame(as.table(g_prop), stringsAsFactors = FALSE)
+    names(g_weights) <- c("group_id", time_name, "prob_g")
+    g_weights$group_id <- as.numeric(g_weights$group_id)
+    g_weights[[time_name]] <- as.numeric(g_weights[[time_name]])
+    g_weights <- g_weights[g_weights$prob_g > 0, ]
     #order columns
-    g_dist <- g_dist[order(g_dist$group_name, g_dist[[time_name]]),]
+    g_weights <- g_weights[order(g_weights$group_id, g_weights[[time_name]]),]
 
-    # Compute p_dist: P(covariates)
-    p_dist <- as.data.frame(prop.table(table(group_name)))
-    names(p_dist) <- c("group_name", "prob")
+    # Compute p_weights: P(covariates)
+    p_weights <- as.data.frame(prop.table(table(gp_data$group_id)), stringsAsFactors = FALSE)
+    names(p_weights) <- c("group_id", "prob_p")
     #order columns
-    p_dist <- p_dist[order(p_dist$group_name),]
+    p_weights$group_id <- as.numeric(p_weights$group_id)
+    p_weights <- p_weights[order(p_weights$group_id),]
 
     # Create key for covariate values (only unique combinations)
-    key <- unique(gp_data[, c("group_name", adjust_vars)])
+    key <- unique(gp_data[, c("group_id", adjust_vars)])
 
     # Single merge for each output
-    g_dist_clean <- merge(g_dist, key, by = "group_name")
-    p_dist_clean <- merge(p_dist, key, by = "group_name")
+    g_dist_clean <- merge(g_weights, key, by = "group_id")
+    p_dist_clean <- merge(p_weights, key, by = "group_id")
 
-    list(g_dist = g_dist_clean[, c("group_name", adjust_vars, time_name, "prob")],
-         p_dist = p_dist_clean[, c("group_name", adjust_vars, "prob")])
+    list(g_weights = g_dist_clean[, c("group_id", adjust_vars, time_name, "prob_g")],
+         p_weights = p_dist_clean[, c("group_id", adjust_vars, "prob_p")])
 }
