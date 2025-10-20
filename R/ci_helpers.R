@@ -19,8 +19,7 @@
 #' @param z_star If `ci_type = "wald"`, a specific critical value used to
 #' to compute Wald confidence intervals (assumed to be positive). If used, `alpha` argument is ignored.
 #'
-#' @return A matrix containing the lower and upper confidence intervals and
-#' relevant bootstrap standard errors.
+#' @return A matrix containing the lower and upper confidence intervals
 #'
 #' @keywords internal
 #' @noRd
@@ -62,13 +61,19 @@ compute_wald_ci <- function(x, boot_x,  alpha = .05, transform, z_star = NULL){
         lower <- stats::plogis(x_logodds - z_crit*boot_sd)
         upper <- stats::plogis(x_logodds + z_crit*boot_sd)
     }else if(transform == "log_ve"){
-
         x_log <- log_ve(x)
         boot_log <- log_ve(boot_x)
         boot_sd <- apply(boot_log, 2, \(x) stats::sd(x[is.finite(x)], na.rm = TRUE))
         boot_n <- apply(boot_log, 2, \(x) sum(is.finite(x)))
         lower <- -1*(exp(x_log + z_crit*boot_sd) - 1)
         upper <-  -1*(exp(x_log - z_crit*boot_sd) - 1)
+    }else if(transform == "log_rr"){
+        x_log <- log(x)
+        boot_log <- log(boot_x)
+        boot_sd <- apply(boot_log, 2, \(x) stats::sd(x[is.finite(x)], na.rm = TRUE))
+        boot_n <- apply(boot_log, 2, \(x) sum(is.finite(x)))
+        lower <- exp(x_log - z_crit*boot_sd)
+        upper <- exp(x_log + z_crit*boot_sd)
     }
     wald_ci <- cbind(lower, upper, wald_n = boot_n)
     colnames(wald_ci) <- c("wald_lower", "wald_upper", "wald_n")

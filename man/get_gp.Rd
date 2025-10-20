@@ -4,7 +4,7 @@
 \alias{get_gp}
 \title{Get empirical probability distributions g(d|x) and p(x) based on input data}
 \usage{
-get_gp(df, outcome_name, trt_name, time_name, adjust_vars, tau)
+get_gp(df, outcome_time, exposure, exposure_time, covariates, tau)
 }
 \arguments{
 \item{df}{A data frame representing the target population for the estimated distributions
@@ -12,23 +12,29 @@ get_gp(df, outcome_name, trt_name, time_name, adjust_vars, tau)
 \item typically, population involves the "analysis-eligible" subset of a given data source
 }}
 
-\item{outcome_name}{Name of the possibly-censored time-to-event variable, measured from the chosen time origin.}
+\item{outcome_time}{Name of the time-to-event/censoring variable. Time should
+be measured from a given time origin (e.g. study start, enrollment, or age)
+for all individuals.}
 
-\item{trt_name}{Name of the exposure indicator. The underlying column should be numeric
-(\code{1} = exposed during follow-up, \code{0} = never exposed during follow-up). Exposure indicator
-should indicate whether an individual is exposed while uncensored and before experiencing the endpoint of interest.}
+\item{exposure}{Name of the exposure indicator. The underlying column should
+be numeric (\code{1} = exposed during follow-up, \code{0} = never exposed during
+follow-up).}
 
-\item{time_name}{Name of the time to exposure, measured from the chosen time origin; use \code{NA} if not exposed.}
+\item{exposure_time}{Name of the time to exposure, measured from the chosen time
+origin; use \code{NA} if not exposed. Time must be measured in the same units
+(e.g. days) as that used for  \code{outcome_time}.}
 
-\item{adjust_vars}{Character vector of baseline covariates to adjust for when fitting the hazard models.}
+\item{covariates}{Character vector of covariates to adjust for when fitting
+the hazard models. These covariates should include all known confounders of
+exposure and censoring measured at the chosen time origin.}
 
 \item{tau}{Numeric. Only vaccinated who are at-risk tau days after vaccination are included.}
 }
 \value{
 A list of the following:
 \describe{
-\item{g_dist}{A data frame containing the covariate-conditional day probabilities.
-Columns include \code{group_name} identifying the covariate group, \verb{<time_name> specifying the day, }prob\verb{specifying the covariate-conditional day probability, and each variables in}adjust_vars\verb{\} \\item\{p_dist\}\{A data frame containing the covariate probabilities. Columns include }group_name\verb{ identifying the covariate group,}prob\verb{specifying the covariate probability, and each variable in}adjust_vars`}
+\item{g_weights}{A data frame containing the covariate-conditional day probabilities.
+Columns include \code{group_id} identifying the covariate group, \verb{<exposure_time> specifying the day, }prob\verb{specifying the covariate-conditional day probability, and each variables in}covariates\verb{\} \\item\{p_weights\}\{A data frame containing the covariate probabilities. Columns include }group_id\verb{ identifying the covariate group,}prob\verb{specifying the covariate probability, and each variable in}covariates`}
 }
 }
 \description{

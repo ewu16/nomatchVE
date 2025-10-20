@@ -9,8 +9,8 @@ add_simultaneous_ci(object, seed = NULL)
 \arguments{
 \item{object}{An object of class \code{vefit} created by \code{\link[=nomatchVE]{nomatchVE()}} or \code{\link[=matching_ve]{matching_ve()}}. Must
 \itemize{
-\item contain evaluations at multiple timepoints (\code{length(object$times)  > 0}),
-\item contain bootstrap samples (\code{return_boot = TRUE} when fitting).
+\item contain evaluations at multiple timepoints (\code{length(object$eval_times)  > 0}),
+\item contain bootstrap samples (\code{keep_boot_samples = TRUE} when fitting).
 }}
 
 \item{seed}{Integer seed for random number generation to ensure reproducible
@@ -40,15 +40,15 @@ is excluded from the simultaneous band and a warning is issued.
 # Fit model with bootstrap samples
 fit <- nomatchVE(
   data = simdata,
-  outcome_name = "Y",
-  event_name = "event",
-  trt_name = "V",
-  time_name = "D_obs",
-  adjust_vars = c("x1", "x2"),
-  times = seq(30, 180, by = 30),
+  outcome_time = "Y",
+  outcome_status = "event",
+  exposure = "V",
+  exposure_time = "D_obs",
+  covariates = c("x1", "x2"),
+  eval_times = seq(30, 180, by = 30),
   tau = 14,
-  n_boot = 100,
-  return_boot = TRUE
+  boot_reps = 100,
+  keep_boot_samples = TRUE
 )
 
 # Add simultaneous CIs
@@ -58,5 +58,5 @@ fit_simul <- add_simultaneous_ci(fit, seed = 123)
 fit_simul$estimates
 
 # Visualize
-plot(fit_simul, confint_type = "simul")
+plot(fit_simul, ci_type = "simul")
 }

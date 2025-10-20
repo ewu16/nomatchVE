@@ -6,23 +6,23 @@
 \usage{
 clean_matched_data(
   matched_data,
-  outcome_name,
-  event_name,
-  trt_name,
-  time_name,
+  outcome_time,
+  outcome_status,
+  exposure,
+  exposure_time,
   tau
 )
 }
 \arguments{
 \item{matched_data}{A data frame representing a matched cohort}
 
-\item{outcome_name}{Character string representing the original outcome variable in  \code{matched_data}}
+\item{outcome_time}{Character string representing the original outcome variable in  \code{matched_data}}
 
-\item{event_name}{Character string representing the original event variable in \code{matched_data}}
+\item{outcome_status}{Character string representing the original event variable in \code{matched_data}}
 
-\item{trt_name}{Character string representing the original vaccination status variable in \code{matched_data}}
+\item{exposure}{Character string representing the original vaccination status variable in \code{matched_data}}
 
-\item{time_name}{Character string representing the original vaccination time variable in \code{matched_data}}
+\item{exposure_time}{Character string representing the original vaccination time variable in \code{matched_data}}
 
 \item{tau}{The time excluded after vaccination to allow building up of
 immunity}
@@ -31,8 +31,8 @@ immunity}
 A data frame representing the analysis-eligible matched dataset (a subset of \verb{matched data}).
 Contains all variables in \code{matched_data}, plus the following variables
 \describe{
-\item{match_<event_name>}{Event variable after adjusting for pair_censoring}
-\item{match_<outcome_name>}{Outcome variable after adjusting for pair_censoring}
+\item{match_<outcome_status>}{Event variable after adjusting for pair_censoring}
+\item{match_<outcome_time>}{Outcome variable after adjusting for pair_censoring}
 \item{match_T}{Time to endpoint from matched index date after adjusting for pair_censoring}
 }
 }

@@ -8,7 +8,7 @@ compare_ve_fits(
   fit1,
   fit2,
   labels = c("Method 1", "Method 2"),
-  confint_type = NULL,
+  ci_type = NULL,
   colors = c("#F8766D", "#00BFC4")
 )
 }
@@ -20,9 +20,9 @@ compare_ve_fits(
 \item{labels}{Character vector of length 2 providing labels for the two methods.
 Default is \code{c("Method 1", "Method 2")}.}
 
-\item{confint_type}{Character string specifying the type of confidence interval to plot.
+\item{ci_type}{Character string specifying the type of confidence interval to plot.
 One of "wald", "percentile", or "simul". If \code{NULL} (default), uses the
-CI type from \code{fit1}. If the object has \code{confint_type = "both"},
+CI type from \code{fit1}. If the object has \code{ci_type = "both"},
 defaults to "wald".}
 
 \item{colors}{Character vector of length 2 providing colors for the two methods.

@@ -18,38 +18,38 @@
 #' \describe{
 #' \item{estimates}{A matrix of estimates. The columns of the matrix are the cumulative
 #'  incidence/VE terms and the rows are the requested time points for evaluation.}
-#' \item{models}{If `return_models = TRUE`, the models used to compute risk and VE}
+#' \item{models}{If `keep_models = TRUE`, the models used to compute risk and VE}
 #' }
-#' @export
+#' @keywords internal
 #'
 compute_marginal_ve <- function(adata,
                                 adata_outcome_name,
                                 adata_event_name,
                                 adata_trt_name,
-                                times,
+                                eval_times,
                                 method,
                                 adjust = NULL,
-                                censor_time = max(times),
+                                censor_time = max(eval_times),
                                 separate = TRUE,
-                                return_models = TRUE){
+                                keep_models = TRUE){
     stopifnot(method %in% c("km", "cox"))
     if(method == "km"){
         marginal_risk <- compute_km_ve(adata,
                                          adata_outcome_name,
                                          adata_event_name,
                                          adata_trt_name,
-                                         times,
-                                         return_models = return_models)
+                                         eval_times,
+                                         keep_models = keep_models)
     }else if(method == "cox"){
         marginal_risk <- compute_cox_ve(adata,
                                           adata_outcome_name,
                                           adata_event_name,
                                           adata_trt_name,
                                           adjust,
-                                          times,
+                                          eval_times,
                                           censor_time,
                                           separate = separate,
-                                          return_models = return_models)
+                                          keep_models = keep_models)
     }
     marginal_risk
 }
@@ -63,39 +63,35 @@ compute_marginal_ve <- function(adata,
 #' \describe{
 #' \item{estimates}{A matrix of estimates. The columns of the matrix are the cumulative
 #'  incidence/VE terms and the rows are the requested time points for evaluation.}
-#' \item{models}{If `return_models = TRUE`, the models used to compute risk and VE}
+#' \item{models}{If `keep_models = TRUE`, the models used to compute risk and VE}
 #'}
 #'
-#' @export
+#' @keywords internal
 
 compute_km_ve <- function(adata,
                           adata_outcome_name,
                           adata_event_name,
                           adata_trt_name,
-                          times,
-                          return_models = TRUE){
+                          eval_times,
+                          keep_models = TRUE){
     outcome <- paste0("survival::Surv(", adata_outcome_name, ",", adata_event_name, ")")
     km_fit <- survival::survfit(stats::reformulate(adata_trt_name, response = outcome) , data = adata)
-    surv_probs <- summary(km_fit, times = times)
-    risk_0 <- 1 - surv_probs$surv[surv_probs$strata == levels(surv_probs$strata)[1]]
-    risk_1 <- 1 - surv_probs$surv[surv_probs$strata == levels(surv_probs$strata)[2]]
-    ve <- 1 - risk_1/risk_0
+    surv_probs <- summary(km_fit, times = eval_times)
+    cuminc_0 <- 1 - surv_probs$surv[surv_probs$strata == levels(surv_probs$strata)[1]]
+    cuminc_1 <- 1 - surv_probs$surv[surv_probs$strata == levels(surv_probs$strata)[2]]
+    rr <- cuminc_1/cuminc_0
+    ve <- 1 - rr
 
-    #error printing
-    # if(any(sapply(c(risk_0, risk_1, ve), length) != length(times))){
-    #     cat("risk_0: ", risk_0, "\n")
-    #     cat("risk_1: ", risk_1, "\n")
-    #     cat("ve: ", ve, "\n")
-    #     print(surv_probs)
-    # }
+    estimates <- cbind(cuminc_0, cuminc_1,
+                       "risk_ratio" = rr,
+                       "vaccine_effectiveness" = ve)
 
-    estimates <- cbind(risk_0, risk_1, ve)
-    rownames(estimates) <- times
+    rownames(estimates) <- eval_times
 
 
     out <- list(estimates = estimates)
 
-    if(return_models){
+    if(keep_models){
         out$models <- km_fit
     }
     return(out)
@@ -116,20 +112,20 @@ compute_km_ve <- function(adata,
 #' \describe{
 #' \item{estimates}{A matrix of estimates. The columns of the matrix are the cumulative
 #'  incidence/VE terms and the rows are the requested time points for evaluation.}
-#' \item{models}{If `return_models = TRUE`, the models used to compute risk and VE}
+#' \item{models}{If `keep_models = TRUE`, the models used to compute risk and VE}
 #' }
 #'
-#' @export
+#' @keywords internal
 #'
 compute_cox_ve <- function(adata,
                              adata_outcome_name,
                              adata_event_name,
                              adata_trt_name,
                              adjust,
-                             times,
+                             eval_times,
                              censor_time,
                              separate = TRUE,
-                             return_models = TRUE){
+                             keep_models = TRUE){
     # --------------------------------------------------------------------------
     # 0. Prep data
     # --------------------------------------------------------------------------
@@ -207,9 +203,9 @@ compute_cox_ve <- function(adata,
         data.frame(t0 = t, trt = model_data$trt, surv_prob)
     }
 
-    pred_at_times <- function(model_data, model, times){
-        pred_list <- lapply(times, \(t) predict_at_t(model_data, model, t))
-        names(pred_list) <- times
+    pred_at_times <- function(model_data, model, eval_times){
+        pred_list <- lapply(eval_times, \(t) predict_at_t(model_data, model, t))
+        names(pred_list) <- eval_times
         do.call("rbind", pred_list)
         rownames(pred_list) <- NULL
         pred_list
@@ -219,7 +215,7 @@ compute_cox_ve <- function(adata,
     combine_list <- lapply(seq_along(models), \(i){
         pred_at_times(model_data = data_list[[i]],
                       model = models[[i]],
-                      times)
+                      eval_times)
     })
 
     # --------------------------------------------------------------------------
@@ -231,7 +227,7 @@ compute_cox_ve <- function(adata,
     rownames(full_pred) <- NULL
 
     #by using aggregate can keep things simpler for separate and together case
-    risk_df <- stats::aggregate(surv_prob ~trt + t0, data = full_pred,
+    cuminc_df <- stats::aggregate(surv_prob ~trt + t0, data = full_pred,
                                 FUN =  \(x){1 - mean(x)},
                                 na.action = stats::na.pass)
 
@@ -239,27 +235,20 @@ compute_cox_ve <- function(adata,
     # --------------------------------------------------------------------------
     # 4. Format result
     # --------------------------------------------------------------------------
-    risk_0 <- risk_df$surv_prob[risk_df$trt == 0]
-    risk_1 <- risk_df$surv_prob[risk_df$trt == 1]
-    ve <- 1 - risk_1/risk_0
+    cuminc_0 <- cuminc_df$surv_prob[cuminc_df$trt == 0]
+    cuminc_1 <- cuminc_df$surv_prob[cuminc_df$trt == 1]
+    rr <- cuminc_1/cuminc_0
+    ve <- 1 - rr
 
-    #error printing
-    # if(any(sapply(c(risk_0, risk_1, ve), length) != length(times))){
-    #     cat("risk_0: ", risk_0, "\n")
-    #     cat("risk_1: ", risk_1, "\n")
-    #     cat("ve: ", ve, "\n")
-    #     print(summary(full_pred))
-    #     print(summary(risk_df))
-    #     print(models)
-    # }
-
-    estimates <- cbind(risk_0, risk_1, ve)
-    rownames(estimates) <- times
+    estimates <- cbind(cuminc_0, cuminc_1,
+                       "risk_ratio" = rr,
+                       "vaccine_effectiveness" = ve)
+    rownames(estimates) <- eval_times
 
 
     out <- list(estimates = estimates)
 
-    if(return_models){
+    if(keep_models){
         out$models <- models
     }
 

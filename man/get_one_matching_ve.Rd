@@ -6,53 +6,56 @@
 \usage{
 get_one_matching_ve(
   matched_data,
-  outcome_name,
-  event_name,
-  trt_name,
-  time_name,
+  outcome_time,
+  outcome_status,
+  exposure,
+  exposure_time,
   tau,
-  times,
-  censor_time,
+  eval_times,
   method = "km",
+  censor_time = NULL,
   adjust = NULL,
   separate = TRUE,
-  return_models = TRUE
+  keep_models = TRUE
 )
 }
 \arguments{
 \item{matched_data}{A data frame for the matched cohort}
 
-\item{outcome_name}{Name of the possibly-censored time-to-event variable, measured from the chosen time origin.}
+\item{outcome_time}{Name of the time-to-event/censoring variable. Time should
+be measured from a given time origin (e.g. study start, enrollment, or age)
+for all individuals.}
 
-\item{event_name}{Name of the event indicator. The underlying column should be numeric
-(\code{1} = event, \code{0} = censored).}
+\item{outcome_status}{Name of the event indicator. The underlying column should be
+numeric (\code{1} = event, \code{0} = censored).}
 
-\item{trt_name}{Name of the exposure indicator. The underlying column should be numeric
-(\code{1} = exposed during follow-up, \code{0} = never exposed during follow-up). Exposure indicator
-should indicate whether an individual is exposed while uncensored and before experiencing the endpoint of interest.}
+\item{exposure}{Name of the exposure indicator. The underlying column should
+be numeric (\code{1} = exposed during follow-up, \code{0} = never exposed during
+follow-up).}
 
-\item{time_name}{Name of the time to exposure, measured from the chosen time origin; use \code{NA} if not exposed.}
+\item{exposure_time}{Name of the time to exposure, measured from the chosen time
+origin; use \code{NA} if not exposed. Time must be measured in the same units
+(e.g. days) as that used for  \code{outcome_time}.}
 
-\item{tau}{Time after exposure (vaccination)  to exclude as part of an "immune build-up" period. Must be non-negative.
-Common values may include 0 days (no delay), 7 days (one week), 14 days (two weeks) and should
-match the biological understanding of when vaccine-induced immunity develops.}
+\item{tau}{Non-negative numeric value specifying the time after exposure that
+should be excluded from the risk evaluation period. This argument is
+primarily intended for vaccination exposures, where it is common to exclude
+the time after vaccination when immunity is still building. Time must be
+measured in the same units as that used for \code{outcome_time} and \code{exposure_time}
+and should reflect the biological understanding of when vaccine-induced
+immunity develops (usually 1-2 weeks). For non-vaccine exposures, \code{tau} can
+be set to 0 (no delay period).}
 
-\item{times}{Numeric vector of time after exposure at which to evaluate VE. All values must be greater than tau and
-should reflect meaningful clinical timepoints (e.g., 30, 60, 90 days).}
+\item{eval_times}{Numeric vector specifying the timepoints at which to compute
+cumulative incidence and the derived effect measures. The timepoints should
+be expressed in terms of time since exposure. All values must be greater
+than \code{tau} and and should correspond to clinically meaningful follow-up
+durations, such as 30, 60, or 90 days after exposure. A fine grid of
+timepoints (e.g., \code{eval_times = (tau+1):100}) can be provided if cumulative
+incidence curves over time are desired.}
 
-\item{censor_time}{Time after exposure at which exposed
-individuals are administratively censored during model fitting. Default:
-\code{max(times)}. This is used to limit borrowing of information from beyond the time period of interest.}
-
-\item{method}{Character string specifying method for survival estimation ("cox" for
-Cox proportional hazards regression model or "km" for Kaplan-Meier estimation)}
-
-\item{adjust}{If \code{method = "cox"}, a formula or  character vector containing the names of covariates in
-\code{matched_data} to adjust for.}
-
-\item{separate}{If \code{method = cox} and \code{separate = TRUE}, Cox regression models are fit in the treated and untreated groups separately.}
-
-\item{return_models}{Logical; return fitted conditional hazard models?
+\item{keep_models}{Logical; return the two fitted hazard models used to compute
+cumulative incidences?
 Default: \code{TRUE}.}
 }
 \value{

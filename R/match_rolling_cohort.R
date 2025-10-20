@@ -1,37 +1,71 @@
-#' Perform exact 1:1 matching using "rolling cohort" design
+#' Match vaccinated and unvaccinated individuals using rolling cohort design
 #'
-#' @description This function creates a matched cohort based on the rolling cohort design.
-#'    Individuals are eligible to be selected as unvaccinated "controls" only if they
-#'    are unvaccinated and endpoint free on the potential matching date
+#' @description
+#' Creates 1:1 matched pairs of vaccinated ("cases") and unvaccinated ("controls")
+#' individuals. Uses a rolling cohort design where controls must be unvaccinated and event-free at the time they are
+#' matched to a case.
+#'
+#' @details
+#' For each vaccination time, newly vaccinated individuals are matched to
+#' eligible controls using exact covariate matching. Controls are eligible if
+#' unvaccinated and event-free at that time. Vaccinated individuals may appear
+#' as a control (when they are not yet vaccinated) and as a case.
+#'
 #'
 #' @inheritParams nomatchVE
-#' @param data A data frame for which matches are sought
-#' @param id_name Character string specifying name of a unique individual
-#'   identifier in `data`.
-#' @param matching_vars A character vector containing the names of variables in
-#'   `data` to match on .
-#' @param replace Logical: Should matching be done with replacement?
-#' @param seed Numeric: seed to set prior to performing random matching
-
+#' @param data Data frame with study population
+#' @param id_name Name of unique identifier variable of individuals
+#' @param matching_vars Character vector of variables to match on exactly
+#' @param replace Logical. Allow controls to be reused? Default: `FALSE`
+#' @param seed Integer for reproducibility. Default: `NULL`
 
 
 #' @return A list containing the following:
 #' \describe{
-#' \item{matched_data}{A data frame containing the matched individuals}
-#' \item{n_unmatched_cases}{The number of vaccinated individuals for whom no match was found}
-#' \item{discarded}{A logical vector denoting whether individual in the source population was
-#' not included in matched_cohort}
+#'   \item{matched_data}{Data frame of matched pairs with original variables plus:
+#'       \itemize{
+#'       \item `match_index_time`: Matching time
+#'       \item `match_type`: "case" or "control"
+#'       \item `match_<exposure>`: Treatment at matching
+#'       \item `match_id`: Pair identifier
+#'     }
+#'    }
+#'   \item{n_unmatched_cases}{Number of unmatched vaccinated individuals}
+#'   \item{discarded}{Logical vector indicating excluded individuals}
 #' }
-#' @export
 #'
-match_rolling_cohort <- function(data, outcome_name, trt_name, time_name, id_name, matching_vars, replace = FALSE, seed = NULL){
+#' @export
+#' @examples
+#' matched_cohort <- match_rolling_cohort(
+#' data = simdata,
+#' outcome_time =  "Y",
+#' exposure = "V",
+#' exposure_time = "D_obs",
+#' matching_vars = c("x1", "x2"),
+#' id_name = "ID",
+#' seed = 5678
+#' )
+match_rolling_cohort <- function(data, outcome_time, exposure, exposure_time, matching_vars, id_name, replace = FALSE, seed = NULL){
 
     # Check data/inputs
-    stopifnot("<outcome_name> not in data" = outcome_name %in% names(data))
-    stopifnot("<event_name>  not in data" = event_name %in% names(data))
-    stopifnot("<trt_name> not in data" = trt_name %in% names(data))
-    stopifnot("<time_name> not in data" = trt_name %in% names(data))
-    stopifnot("<id_name> is not a unique identifier for data" = !any(duplicated(data[[id_name]])))
+    #validate_data(data, outcome_time, exposure, exposure_time, matching_vars)
+
+    if(any(duplicated(data[[id_name]]))){
+        stop("<id_name> is not a unique identifier for data")
+    }
+
+    # Check for name conflicts for variables that will be added
+    reserved_vars <- c("match_index_time", "match_type", paste0("match_", exposure), "match_id")
+    conflicts <- intersect(reserved_vars, names(data))
+
+    if(length(conflicts) > 0) {
+        stop(
+            "Data contains reserved variable names: ",
+            paste(conflicts, collapse = ", "), "\n",
+            "Please rename these variables before matching.",
+            call. = FALSE
+        )
+    }
 
     #set seed for reproducibility due to random matching
     if(!is.null(seed)){
@@ -43,18 +77,18 @@ match_rolling_cohort <- function(data, outcome_name, trt_name, time_name, id_nam
     n_pairs_counter <- 0 #keep track of how many pairs have been matched
 
     #vaccinated serve as "cases" for matching, unvaccinated are "controls"
-    cases <- subset(data, data[[trt_name]] == 1)
-    observed_ds <- sort(unique(data[[time_name]]))
+    cases <- subset(data, data[[exposure]] == 1)
+    observed_ds <- sort(unique(data[[exposure_time]]))
 
-    #loop through observed vaccination times- each newly vaccinated person is eligible for matching
+    #loop through observed vaccination eval_times- each newly vaccinated person is eligible for matching
     for(d in observed_ds){
         #cases on day d
-        case_d <- subset(cases, cases[[time_name]] == d)
+        case_d <- subset(cases, cases[[exposure_time]] == d)
 
         #controls on day d
         ## eligibility conditions
-        unvaxed_on_d <- data[[time_name]] > d | is.na(data[[time_name]])
-        endpointfree_on_d <- data[[outcome_name]] > d
+        unvaxed_on_d <- data[[exposure_time]] > d | is.na(data[[exposure_time]])
+        endpointfree_on_d <- data[[outcome_time]] > d
         eligible_on_d <- unvaxed_on_d & endpointfree_on_d
         control_d <- subset(data, eligible_on_d)
 
@@ -86,10 +120,10 @@ match_rolling_cohort <- function(data, outcome_name, trt_name, time_name, id_nam
             matched_df <- rbind(matched_cases, matched_controls)
 
             #add information about matched pairs to matched df
-            matched_df$d <- d
-            matched_df$type <- rep(c("case", "control"), each = n_matches)
-            matched_df[[paste0(trt_name, "_d")]] <- rep(c(1, 0), each = n_matches)
-            matched_df$pair_id <- rep(n_pairs_counter + (1:n_matches), 2)
+            matched_df$match_index_time <- d
+            matched_df$match_type <- rep(c("case", "control"), each = n_matches)
+            matched_df[[paste0("match_", exposure)]] <- rep(c(1, 0), each = n_matches)
+            matched_df$match_id <- rep(n_pairs_counter + (1:n_matches), 2)
 
             #update info for larger for loops
             matched_df_list <- c(matched_df_list, list(matched_df))
@@ -97,14 +131,22 @@ match_rolling_cohort <- function(data, outcome_name, trt_name, time_name, id_nam
             n_pairs_counter <- n_pairs_counter + n_matches
 
         }#end loop for covariate groups
-    }#end loop for observed vaccination times
+    }#end loop for observed vaccination eval_times
 
-    #compile final matched dataset
+    #handle case where no matches are found
+    if(length(matched_df_list) == 0) {
+        warning("No matches found. Consider relaxing matching criteria.")
+        return(list(matched_data = data.frame(),
+                    n_unmatched_cases = nrow(cases),
+                    discarded = rep(TRUE, nrow(data))))
+    }
+
+    #otherwise, compile final matched dataset
     matched <- do.call(rbind, matched_df_list)
-    matched_final <- matched[order(matched$pair_id),]
+    matched_final <- matched[order(matched$match_id),]
     rownames(matched_final) <- NULL
 
-    unmatched_cases <- setdiff(cases[[id_name]], subset(matched_final, type == "case")[[id_name]])
+    unmatched_cases <- setdiff(cases[[id_name]], subset(matched_final, match_type == "case")[[id_name]])
     discarded <- !(data[[id_name]] %in% matched_final[[id_name]])
 
     list(matched_data = matched_final,

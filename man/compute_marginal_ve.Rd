@@ -10,12 +10,12 @@ compute_marginal_ve(
   adata_outcome_name,
   adata_event_name,
   adata_trt_name,
-  times,
+  eval_times,
   method,
   adjust = NULL,
-  censor_time = max(times),
+  censor_time = max(eval_times),
   separate = TRUE,
-  return_models = TRUE
+  keep_models = TRUE
 )
 }
 \arguments{
@@ -28,22 +28,16 @@ time should be the time to event from vaccination/matched index date}
 
 \item{adata_trt_name}{Character string specifying the treatment variable in \code{adata}}
 
-\item{times}{Numeric vector of time after exposure at which to evaluate VE. All values must be greater than tau and
-should reflect meaningful clinical timepoints (e.g., 30, 60, 90 days).}
+\item{eval_times}{Numeric vector specifying the timepoints at which to compute
+cumulative incidence and the derived effect measures. The timepoints should
+be expressed in terms of time since exposure. All values must be greater
+than \code{tau} and and should correspond to clinically meaningful follow-up
+durations, such as 30, 60, or 90 days after exposure. A fine grid of
+timepoints (e.g., \code{eval_times = (tau+1):100}) can be provided if cumulative
+incidence curves over time are desired.}
 
-\item{method}{Character string specifying method for survival estimation ("cox" for
-Cox proportional hazards regression model or "km" for Kaplan-Meier estimation)}
-
-\item{adjust}{If \code{method = "cox"}, a formula or  character vector containing the names of covariates in
-\code{matched_data} to adjust for.}
-
-\item{censor_time}{Time after exposure at which exposed
-individuals are administratively censored during model fitting. Default:
-\code{max(times)}. This is used to limit borrowing of information from beyond the time period of interest.}
-
-\item{separate}{If \code{method = cox} and \code{separate = TRUE}, Cox regression models are fit in the treated and untreated groups separately.}
-
-\item{return_models}{Logical; return fitted conditional hazard models?
+\item{keep_models}{Logical; return the two fitted hazard models used to compute
+cumulative incidences?
 Default: \code{TRUE}.}
 }
 \value{
@@ -51,7 +45,7 @@ A list containing the following:
 \describe{
 \item{estimates}{A matrix of estimates. The columns of the matrix are the cumulative
 incidence/VE terms and the rows are the requested time points for evaluation.}
-\item{models}{If \code{return_models = TRUE}, the models used to compute risk and VE}
+\item{models}{If \code{keep_models = TRUE}, the models used to compute risk and VE}
 }
 }
 \description{

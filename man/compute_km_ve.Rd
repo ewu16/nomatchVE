@@ -10,8 +10,8 @@ compute_km_ve(
   adata_outcome_name,
   adata_event_name,
   adata_trt_name,
-  times,
-  return_models = TRUE
+  eval_times,
+  keep_models = TRUE
 )
 }
 \arguments{
@@ -24,10 +24,16 @@ time should be the time to event from vaccination/matched index date}
 
 \item{adata_trt_name}{Character string specifying the treatment variable in \code{adata}}
 
-\item{times}{Numeric vector of time after exposure at which to evaluate VE. All values must be greater than tau and
-should reflect meaningful clinical timepoints (e.g., 30, 60, 90 days).}
+\item{eval_times}{Numeric vector specifying the timepoints at which to compute
+cumulative incidence and the derived effect measures. The timepoints should
+be expressed in terms of time since exposure. All values must be greater
+than \code{tau} and and should correspond to clinically meaningful follow-up
+durations, such as 30, 60, or 90 days after exposure. A fine grid of
+timepoints (e.g., \code{eval_times = (tau+1):100}) can be provided if cumulative
+incidence curves over time are desired.}
 
-\item{return_models}{Logical; return fitted conditional hazard models?
+\item{keep_models}{Logical; return the two fitted hazard models used to compute
+cumulative incidences?
 Default: \code{TRUE}.}
 }
 \value{
@@ -35,7 +41,7 @@ A list containing the following:
 \describe{
 \item{estimates}{A matrix of estimates. The columns of the matrix are the cumulative
 incidence/VE terms and the rows are the requested time points for evaluation.}
-\item{models}{If \code{return_models = TRUE}, the models used to compute risk and VE}
+\item{models}{If \code{keep_models = TRUE}, the models used to compute risk and VE}
 }
 }
 \description{

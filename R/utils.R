@@ -1,13 +1,23 @@
 # Format estimates --------------------------------------------------------
 
-
-#' Convert estimates list to tidy data frame
+#' Convert estimates to tidy long-format data frame
 #'
-#' @param estimates {A list of matrices for cumulative incidences and VE.
-#'  Each matrix contains the point estimate and confidence intervals for the specified term.}
+#' @description
+#' Converts the `estimates` component of a `vefit` object into a
+#' long-format data frame for easy plotting and analysis.
+#' Each row represents one term (cumulative incidence or derived effect measure) at a specific timepoint.
 #'
-#' @return A data frame with columns `t0` specifying the time point and `term`,
-#' and point estimates, and confidence intervals.
+#' @param estimates A list of matrices, typically from `fit$estimates` in a `vefit`
+#'   object. Each matrix (e.g., `cuminc_0`, `cuminc_1`, `vaccine_effectiveness`/`risk_ratio`)
+#'   contains estimates, confidence intervals, and related statistics evaluated
+#'   at different timepoints.
+#'
+#' @return
+#' A long-format data frame with:
+#'   - `t0`: the timepoint
+#'   - `term`: what was estimated (`cuminc_0`, `cuminc_1`, or `vaccine_effectiveness`/`risk_ratio`)
+#'   -  Remaining columns from the original matrices (estimates, confidence intervals, ad related statistics.)
+#'
 #' @export
 #'
 estimates_to_df <- function(estimates){
@@ -23,30 +33,4 @@ estimates_to_df <- function(estimates){
     ordered_df
 
 }
-
-
-#' Reform estimates list to a list arranged by time point rather than term
-#'
-#' @param estimates {A list of matrices for cumulative incidences and VE.
-#'  Each matrix contains the point estimate and confidence intervals for the specified term.}
-#'
-#'
-#' @return A list of matrices for each time point where the rows
-#' are the term and the columns are the estimates at the given time point.
-#' @export
-estimates_by_time <- function(estimates){
-    times <- rownames(estimates[[1]])
-    estimates_time_list <- lapply(seq_along(times), \(i){
-        tmp <- rbind(estimates[[1]][i,],
-                     estimates[[2]][i,],
-                     estimates[[3]][i,])
-        rownames(tmp) <- names(estimates)
-        tmp
-    })
-    names(estimates_time_list) <- times
-    estimates_time_list
-}
-
-
-
 

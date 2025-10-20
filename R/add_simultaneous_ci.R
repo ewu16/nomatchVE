@@ -6,8 +6,8 @@
 #' useful for making inferences about the entire VE curve.
 #'
 #' @param object An object of class `vefit` created by [nomatchVE()] or [matching_ve()]. Must
-#'   * contain evaluations at multiple timepoints (`length(object$times)  > 0`),
-#'   * contain bootstrap samples (`return_boot = TRUE` when fitting).
+#'   * contain evaluations at multiple timepoints (`length(object$eval_times)  > 0`),
+#'   * contain bootstrap samples (`keep_boot_samples = TRUE` when fitting).
 #' @param seed Integer seed for random number generation to ensure reproducible
 #'   critical values for simultaneous confidence intervals. Default is `NULL` (no seed set).
 #'
@@ -31,15 +31,15 @@
 #' # Fit model with bootstrap samples
 #' fit <- nomatchVE(
 #'   data = simdata,
-#'   outcome_name = "Y",
-#'   event_name = "event",
-#'   trt_name = "V",
-#'   time_name = "D_obs",
-#'   adjust_vars = c("x1", "x2"),
-#'   times = seq(30, 180, by = 30),
+#'   outcome_time = "Y",
+#'   outcome_status = "event",
+#'   exposure = "V",
+#'   exposure_time = "D_obs",
+#'   covariates = c("x1", "x2"),
+#'   eval_times = seq(30, 180, by = 30),
 #'   tau = 14,
-#'   n_boot = 100,
-#'   return_boot = TRUE
+#'   boot_reps = 100,
+#'   keep_boot_samples = TRUE
 #' )
 #'
 #' # Add simultaneous CIs
@@ -49,7 +49,7 @@
 #' fit_simul$estimates
 #'
 #' # Visualize
-#' plot(fit_simul, confint_type = "simul")
+#' plot(fit_simul, ci_type = "simul")
 
 add_simultaneous_ci <- function(object, seed = NULL){
 
@@ -57,14 +57,14 @@ add_simultaneous_ci <- function(object, seed = NULL){
     stop("Object must be a vefit object", call. = FALSE)
   }
 
-  if (length(object$times) <= 1) {
+  if (length(object$eval_times) <= 1) {
     stop("Object must have more than 1 timepoint for simultaneous CIs",
          call. = FALSE)
   }
 
   if (is.null(object$boot_samples)) {
     stop("Object must contain bootstrap samples. ",
-         "Rerun with return_boot = TRUE",
+         "Rerun with keep_boot_samples = TRUE",
          call. = FALSE)
   }
 
@@ -130,9 +130,6 @@ add_simultaneous_ci <- function(object, seed = NULL){
 
   object$simul_z_star <- z_star
   object$simul_excluded_timepoints <- excluded_timepoints
-
-  message("Simultaneous CIs added to vefit object")
-  message("Call plot(fit, confint_type = 'simul') to visualize")
 
   return(object)
 }

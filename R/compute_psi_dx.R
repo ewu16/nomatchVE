@@ -15,7 +15,7 @@
 #'
 #' @param fit_0 A fitted model returned from [fit_model_0()]
 #' @param fit_1 A fitted model returned from [fit_model_1()]
-#' @param time_name Name of the time-to-exposure variable  in `newdata`.
+#' @param exposure_time Name of the time-to-exposure variable  in `newdata`.
 #'   Used to compute \eqn{\psi_0(t_0; d,x)} where \eqn{d + \tau} and \eqn{d + t_0} are needed.
 #' @param tau Delay period
 #' @param t0  Time since exposure at which to evaluate cumulative incidence.
@@ -29,10 +29,10 @@
 #' @seealso [predict_from_model_0()], [predict_from_model_1()]
 #' @export
 #'
-compute_psi_dx_t0 <- function(fit_0, fit_1, time_name, t0, tau, newdata){
+compute_psi_dx_t0 <- function(fit_0, fit_1, exposure_time, t0, tau, newdata){
     #check new data argument
-    pred_0 <- predict_from_model_0(fit_0, time_name, t0, tau, newdata)
-    pred_1 <- predict_from_model_1(fit_1, time_name, t0, tau, newdata)
+    pred_0 <- predict_from_model_0(fit_0, exposure_time, t0, tau, newdata)
+    pred_1 <- predict_from_model_1(fit_1, exposure_time, t0, tau, newdata)
     psi_dx <- merge(pred_0, pred_1)
     psi_dx
 }
@@ -43,11 +43,11 @@ compute_psi_dx_t0 <- function(fit_0, fit_1, time_name, t0, tau, newdata){
 #' incidence for each row of `newdata`.
 #'
 #' - `predict_from_model_0()` computes \eqn{\psi_0(t_0; d, x) = 1 - S_0(d+t_0 \mid x)/S_0(d+\tau \mid x)}
-#'   by calling `predict(fit_0, newdata, type = "survival")` at times
+#'   by calling `predict(fit_0, newdata, type = "survival")` at eval_times
 #' `d + t0` and `d + tau`.
 #'
 #' `predict_from_model_1()` computes \eqn{\psi_1(t_0; d, x) = 1 - S_1(t_0 \mid d, x)/S_1(\tau \mid d, x)}
-#'  `by calling `predict(fit_1, newdata, type = "survival")` at times
+#'  `by calling `predict(fit_1, newdata, type = "survival")` at eval_times
 #'  `t0` and `tau`.
 #'
 #'
@@ -63,20 +63,20 @@ compute_psi_dx_t0 <- function(fit_0, fit_1, time_name, t0, tau, newdata){
 #' # Fit hazard model under no vaccine
 #' fit_0 <- fit_model_0(
 #'   data = simdata,
-#'   outcome_name = "Y",
-#'   event_name = "event",
-#'   trt_name = "V",
-#'   time_name = "D_obs",
-#'   adjust_vars = adjust_vars
+#'   outcome_time = "Y",
+#'   outcome_status = "event",
+#'   exposure = "V",
+#'   exposure_time = "D_obs",
+#'   covariates = covariates
 #'  )
 #'
 #' # Fit hazard model under vaccine
 #' fit_1 <- fit_model_1(
 #'   data = simdata,
-#'   outcome_name = "Y",
-#'   event_name = "event",
-#'   trt_name = "V",
-#'   time_name = "D_obs",
+#'   outcome_time = "Y",
+#'   outcome_status = "event",
+#'   exposure = "V",
+#'   exposure_time = "D_obs",
 #'   tau = tau
 #'  )
 #'
@@ -88,7 +88,7 @@ compute_psi_dx_t0 <- function(fit_0, fit_1, time_name, t0, tau, newdata){
 #' # Predict from hazard model under no vaccine
 #' predict_from_model_0(
 #'     fit_0,
-#'     time_name = "D_obs",
+#'     exposure_time = "D_obs",
 #'     t0 = 90,
 #'     tau = 14,
 #'     newdata = newdata
@@ -97,24 +97,24 @@ compute_psi_dx_t0 <- function(fit_0, fit_1, time_name, t0, tau, newdata){
 #' # Predict from hazard model under vaccine
 #' predict_from_model_1(
 #'   fit_1,
-#'   time_name = "D_obs",
+#'   exposure_time = "D_obs",
 #'   t0 = 90,
 #'   tau = 14,
 #'   newdata = newdata
 #' )
 
-predict_from_model_0 <- function(fit_0, time_name, t0, tau, newdata){
+predict_from_model_0 <- function(fit_0, exposure_time, t0, tau, newdata){
     surv_vars <- all.vars(formula(fit_0)[[2]])
     time_var <- surv_vars[1]
     event_var <- surv_vars[2]
 
     # Build newdata to predict survival at d+tau and d+t0
     newdata_d_plus_tau              <- newdata
-    newdata_d_plus_tau[[time_var]]  <- newdata[[time_name]] + tau
+    newdata_d_plus_tau[[time_var]]  <- newdata[[exposure_time]] + tau
     newdata_d_plus_tau[[event_var]] <- 0
 
     newdata_d_plus_t0               <- newdata
-    newdata_d_plus_t0[[time_var]]   <- newdata[[time_name]] + t0
+    newdata_d_plus_t0[[time_var]]   <- newdata[[exposure_time]] + t0
     newdata_d_plus_t0[[event_var]]  <- 0
 
     # Predict and store survival predictions
@@ -128,7 +128,7 @@ predict_from_model_0 <- function(fit_0, time_name, t0, tau, newdata){
 
 #' @rdname predict_from_model_0
 #'
-predict_from_model_1 <- function(fit_1, time_name, t0, tau, newdata){
+predict_from_model_1 <- function(fit_1, exposure_time, t0, tau, newdata){
     surv_vars <- all.vars(formula(fit_1)[[2]])
     time_var <- surv_vars[1]
     event_var <- surv_vars[2]

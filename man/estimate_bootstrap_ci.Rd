@@ -7,11 +7,11 @@
 estimate_bootstrap_ci(
   one_boot_function_name,
   one_boot_args,
-  confint_type,
-  n_boot,
+  ci_type,
+  boot_reps,
   pt_est = NULL,
   alpha = 0.05,
-  return_boot = TRUE,
+  keep_boot_samples = TRUE,
   n_cores = 1
 )
 }
@@ -22,26 +22,28 @@ one bootstrap iteration of estimates}
 \item{one_boot_args}{List of arguments to pass to the function that computes
 one bootstrap iteration of estimations}
 
-\item{confint_type}{Method for constructing confidence intervals.
-One of \code{"wald"}, \code{"percentile"}, or \code{"both"}.
+\item{ci_type}{Method for constructing bootstrap confidence intervals. One of
+\code{"wald"}, \code{"percentile"}, or \code{"both"}.
 \itemize{
-\item \code{"wald"}: Computes Wald-style intervals using bootstrap standard errors.
+\item \code{"wald"} (default): Computes Wald-style intervals using bootstrap standard errors.
+See \strong{Confidence intervals} section for details.
 \item \code{"percentile"}: Computes percentile bootstrap intervals.
 \item \code{"both"}: Computes and returns both sets of intervals.
-Default: \code{"wald"}. See \strong{Confidence intervals} section.
 }}
 
-\item{n_boot}{Number of bootstrap replicates for confidence intervals.
-Recommended to use at least 1000 for publication-quality results. Use smaller values (e.g., 10-100) for initial exploration.
-Default: \code{0} (no bootstrapping).}
+\item{boot_reps}{Number of bootstrap replicates for confidence intervals.
+Recommended to use at least 1000 for publication-quality results. Use
+smaller values (e.g., 10-100) for initial exploration. Default: \code{0} (no
+bootstrapping).}
 
 \item{pt_est}{A matrix of estimates. The columns of the matrix are the cumulative
 incidence/VE terms and the rows are the requested time points for evaluation.}
 
-\item{alpha}{Significance level for confidence intervals (Confidence level = 100*(1-\code{alpha})\%). Default: \code{0.05}.}
+\item{alpha}{Significance level for confidence intervals (Confidence level =
+100*(1-\code{alpha})\%). Default: \code{0.05}.}
 
-\item{return_boot}{Logical; return bootstrap draws in \code{boot_samples}?
-Default: \code{TRUE}. Must be set to \code{TRUE} if user plans to use \code{\link[=add_simultaneous_ci]{add_simultaneous_ci()}}
+\item{keep_boot_samples}{Logical; return bootstrap samples? Default:
+\code{TRUE}. Must be set to \code{TRUE} if user plans to use \code{\link[=add_simultaneous_ci]{add_simultaneous_ci()}}
 to obtain simultaneous confidence intervals.}
 
 \item{n_cores}{Integer; parallel cores for bootstrapping. Passed to
@@ -52,11 +54,11 @@ Windows. Default: \code{1}.}
 A list containing the following:
 \describe{
 \item{ci_estimates}{A list of matrices containing the lower and upper confidence interval bounds and
-bootstrap standard error for each term. When \code{confint_type = "wald"}, the bootstrapped standard errors
+bootstrap standard error for each term. When \code{ci_type = "wald"}, the bootstrapped standard errors
 on the transformed scale are also included.}
 \item{n_success_boot}{A numeric vector of the number of successful bootstrap samples for each time point.(Success bootstrap samples are
 those that result in non-missing valid point estimates.)}
-\item{boot_samples}{If \code{return_boot = TRUE}, a list of matrices for each term that contain the bootstrap estimates where the rows are the bootstrap iterations and
+\item{boot_samples}{If \code{keep_boot_samples = TRUE}, a list of matrices for each term that contain the bootstrap estimates where the rows are the bootstrap iterations and
 the columns are the time points.}
 }
 }

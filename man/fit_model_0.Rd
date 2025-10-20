@@ -3,72 +3,97 @@
 \name{fit_model_0}
 \alias{fit_model_0}
 \alias{fit_model_1}
-\title{Fit survival models to estimate hazards for nomatch estimation approach}
+\title{Fit survival models to estimate exposure-specific hazards for G-computation
+approach}
 \usage{
 fit_model_0(
   data,
-  outcome_name,
-  event_name,
-  trt_name,
-  time_name,
-  adjust_vars,
+  outcome_time,
+  outcome_status,
+  exposure,
+  exposure_time,
+  covariates,
   formula_0 = NULL
 )
 
 fit_model_1(
   data,
-  outcome_name,
-  event_name,
-  trt_name,
-  time_name,
-  adjust_vars,
-  censor_time,
+  outcome_time,
+  outcome_status,
+  exposure,
+  exposure_time,
+  covariates,
   tau,
+  censor_time = NULL,
   formula_1 = NULL
 )
 }
 \arguments{
-\item{data}{A data frame with one row per individual containing
-the columns named in \code{outcome_name}, \code{event_name}, \code{trt_name}, \code{time_name},
-and any variables listed in \code{adjust_vars}.}
+\item{data}{A data frame with one row per individual containing the columns
+named in \code{outcome_time}, \code{outcome_status}, \code{exposure}, \code{exposure_time}, and any
+variables listed in \code{covariates}.}
 
-\item{outcome_name}{Name of the possibly-censored time-to-event variable, measured from the chosen time origin.}
+\item{outcome_time}{Name of the time-to-event/censoring variable. Time should
+be measured from a given time origin (e.g. study start, enrollment, or age)
+for all individuals.}
 
-\item{event_name}{Name of the event indicator. The underlying column should be numeric
-(\code{1} = event, \code{0} = censored).}
+\item{outcome_status}{Name of the event indicator. The underlying column should be
+numeric (\code{1} = event, \code{0} = censored).}
 
-\item{trt_name}{Name of the exposure indicator. The underlying column should be numeric
-(\code{1} = exposed during follow-up, \code{0} = never exposed during follow-up). Exposure indicator
-should indicate whether an individual is exposed while uncensored and before experiencing the endpoint of interest.}
+\item{exposure}{Name of the exposure indicator. The underlying column should
+be numeric (\code{1} = exposed during follow-up, \code{0} = never exposed during
+follow-up).}
 
-\item{time_name}{Name of the time to exposure, measured from the chosen time origin; use \code{NA} if not exposed.}
+\item{exposure_time}{Name of the time to exposure, measured from the chosen time
+origin; use \code{NA} if not exposed. Time must be measured in the same units
+(e.g. days) as that used for  \code{outcome_time}.}
 
-\item{adjust_vars}{Character vector of baseline covariates to adjust for when fitting the hazard models.}
+\item{covariates}{Character vector of covariates to adjust for when fitting
+the hazard models. These covariates should include all known confounders of
+exposure and censoring measured at the chosen time origin.}
 
-\item{formula_0}{Optional formula for model 0. If \code{NULL}, uses \code{adjust_vars}. Default \code{NULL}}
+\item{formula_0}{Optional right hand side of the formula for model 0. By default, uses \code{covariates}.}
+
+\item{tau}{Non-negative numeric value specifying the time after exposure that
+should be excluded from the risk evaluation period. This argument is
+primarily intended for vaccination exposures, where it is common to exclude
+the time after vaccination when immunity is still building. Time must be
+measured in the same units as that used for \code{outcome_time} and \code{exposure_time}
+and should reflect the biological understanding of when vaccine-induced
+immunity develops (usually 1-2 weeks). For non-vaccine exposures, \code{tau} can
+be set to 0 (no delay period).}
 
 \item{censor_time}{Time after exposure at which exposed
-individuals are administratively censored during model fitting. Default:
-\code{max(times)}. This is used to limit borrowing of information from beyond the time period of interest.}
+individuals are censored during model fitting to prevent extrapolation. By default,
+no censoring is applied.}
 
-\item{tau}{Time after exposure (vaccination)  to exclude as part of an "immune build-up" period. Must be non-negative.
-Common values may include 0 days (no delay), 7 days (one week), 14 days (two weeks) and should
-match the biological understanding of when vaccine-induced immunity develops.}
-
-\item{formula_1}{Optional formula for model 1. If \code{NULL}, uses \code{adjust_vars} plus
-natural spline of vaccination day (4 df). Default \code{NULL}}
+\item{formula_1}{Optional right hand side of the formula for model 1. By default, uses \code{covariates}
+plus natural spline of vaccination day (4 df). Default \code{NULL}}
 }
 \value{
-A fitted \code{coxph} object with additional component \code{data} containing
-the analysis dataset used for fitting.
+A fitted \code{coxph} object with additional component \verb{$data} containing
+the analysis dataset used for fitting:
+\itemize{
+\item For \code{fit_model_0()}: includes the survival tuple \verb{(Y}, \code{event})  and
+covariates adjusted for in model, where \code{Y} is the time from time origin
+to first of endpoint, censoring or exposure time (for exposed individuals).
+\item For \code{fit_model_1()}: includes the survival tuple \verb{(T1}, \code{event}), \verb{<exposure_time>},
+and covariates adjusted for in model, where \code{T1} is the time from exposure to
+endpoint or censoring, with additional censoring by \code{censor_time}. Only includes
+exposed individuals at risk \code{tau} days after exposure.
+}
 }
 \description{
-\code{fit_model_0()} fits a Cox model to estimate risk for unvaccinated individuals
-Includes all individuals, censoring vaccinated individuals
-at their time of vaccination
+\code{fit_model_0()} fits a Cox model to estimate risk for unexposed
+individuals on the original time scale. Includes all individuals, censoring
+exposed individuals at their time of exposure. By default, model is adjusted for by
+\verb{<covariates>}, included as simple linear terms.
 
-\code{fit_model_1()} fits a Cox model to estimate risk for vaccinated individuals
-Includes vaccinated individuals at risk \code{tau} days post-vaccination, censored at
-\code{censor_time} days post-vaccination. By default, vaccination day
-is included as a natural cubic spline with 4 degrees of freedom.
+\code{fit_model_1()} fits a Cox model to estimate risk for exposed individuals on
+the time scale of time since exposure. Includes exposed individuals who
+remain at risk \code{tau} days after exposure. Individuals are additionally
+censored at \code{censor_time} days after exposure to avoid extrapolation beyond
+the time period of interest. By default, model is adjusted for
+\verb{<covariates>}, included as simple linear terms, and exposure time is included as a
+natural cubic spline with 4 degrees of freedom.
 }

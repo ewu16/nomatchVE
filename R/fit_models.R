@@ -5,21 +5,21 @@
 #' @description `fit_model_0()` fits a Cox model to estimate risk for unexposed
 #' individuals on the original time scale. Includes all individuals, censoring
 #' exposed individuals at their time of exposure. By default, model is adjusted for by
-#' `<adjust_vars>`, included as simple linear terms.
+#' `<covariates>`, included as simple linear terms.
 #'
 #' `fit_model_1()` fits a Cox model to estimate risk for exposed individuals on
 #' the time scale of time since exposure. Includes exposed individuals who
 #' remain at risk `tau` days after exposure. Individuals are additionally
 #' censored at `censor_time` days after exposure to avoid extrapolation beyond
 #' the time period of interest. By default, model is adjusted for
-#' `<adjust_vars>`, included as simple linear terms, and exposure time is included as a
+#' `<covariates>`, included as simple linear terms, and exposure time is included as a
 #' natural cubic spline with 4 degrees of freedom.
 #'
 #' @inheritParams nomatchVE
 #'
-#' @param formula_0 Optional right hand side of the formula for model 0. By default, uses `adjust_vars`.
+#' @param formula_0 Optional right hand side of the formula for model 0. By default, uses `covariates`.
 #'
-#' @param formula_1 Optional right hand side of the formula for model 1. By default, uses `adjust_vars`
+#' @param formula_1 Optional right hand side of the formula for model 1. By default, uses `covariates`
 #'   plus natural spline of vaccination day (4 df). Default `NULL`
 #'
 #' @param censor_time Time after exposure at which exposed
@@ -31,18 +31,18 @@
 #' - For `fit_model_0()`: includes the survival tuple `(Y`, `event`)  and
 #' covariates adjusted for in model, where `Y` is the time from time origin
 #' to first of endpoint, censoring or exposure time (for exposed individuals).
-#' - For `fit_model_1()`: includes the survival tuple `(T1`, `event`), `<time_name>`,
+#' - For `fit_model_1()`: includes the survival tuple `(T1`, `event`), `<exposure_time>`,
 #' and covariates adjusted for in model, where `T1` is the time from exposure to
 #' endpoint or censoring, with additional censoring by `censor_time`. Only includes
 #' exposed individuals at risk `tau` days after exposure.
 #' @export
 #'
-fit_model_0 <- function(data, outcome_name, event_name, trt_name, time_name,
-                        adjust_vars, formula_0 = NULL){
+fit_model_0 <- function(data, outcome_time, outcome_status, exposure, exposure_time,
+                        covariates, formula_0 = NULL){
 
     #Define formula
     if(is.null(formula_0)){
-        formula_0 <- stats::reformulate(adjust_vars)
+        formula_0 <- stats::reformulate(covariates)
     }
 
     #Extract covariates
@@ -51,10 +51,10 @@ fit_model_0 <- function(data, outcome_name, event_name, trt_name, time_name,
     check_reserved_vars(covars, c("Y", "event"), "Model covariates")
 
     #Extract column values
-    outcome <- data[[outcome_name]]
-    event <- data[[event_name]]
-    D_obs <- data[[time_name]]
-    V <- data[[trt_name]]
+    outcome <- data[[outcome_time]]
+    event <- data[[outcome_status]]
+    D_obs <- data[[exposure_time]]
+    V <- data[[exposure]]
 
     #Define survival outcomes
     # for model_0, censor exposed individuals at time of exposure
@@ -76,8 +76,8 @@ fit_model_0 <- function(data, outcome_name, event_name, trt_name, time_name,
 
 #' @rdname fit_model_0
 #' @export
-fit_model_1 <- function(data, outcome_name, event_name, trt_name, time_name,
-                        adjust_vars, tau, censor_time = NULL, formula_1 = NULL){
+fit_model_1 <- function(data, outcome_time, outcome_status, exposure, exposure_time,
+                        covariates, tau, censor_time = NULL, formula_1 = NULL){
 
     if(is.null(censor_time)){
         censor_time <- Inf #effectively prevents additional censoring
@@ -85,8 +85,8 @@ fit_model_1 <- function(data, outcome_name, event_name, trt_name, time_name,
 
     #Define formula
     if(is.null(formula_1)){
-        d_term <- paste0("splines::ns(", time_name, ", df = 4)")
-        formula_1 <-stats::reformulate(c(adjust_vars, d_term))
+        d_term <- paste0("splines::ns(", exposure_time, ", df = 4)")
+        formula_1 <-stats::reformulate(c(covariates, d_term))
     }
 
     #Extract covariates
@@ -96,10 +96,10 @@ fit_model_1 <- function(data, outcome_name, event_name, trt_name, time_name,
     check_reserved_vars(covars, c("T1", "event"), "Model covariates")
 
     #Extract column values
-    outcome <- data[[outcome_name]]
-    event <- data[[event_name]]
-    D_obs <- data[[time_name]]
-    V <- data[[trt_name]]
+    outcome <- data[[outcome_time]]
+    event <- data[[outcome_status]]
+    D_obs <- data[[exposure_time]]
+    V <- data[[exposure]]
 
     #Define survival outcomes
     #for model_1, time-to-event variable is time from vaccination

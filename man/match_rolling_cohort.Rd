@@ -6,9 +6,9 @@
 \usage{
 match_rolling_cohort(
   data,
-  outcome_name,
-  trt_name,
-  time_name,
+  outcome_time,
+  exposure,
+  exposure_time,
   matching_vars,
   id_name,
   replace = FALSE,
@@ -18,13 +18,17 @@ match_rolling_cohort(
 \arguments{
 \item{data}{Data frame with study population}
 
-\item{outcome_name}{Name of the possibly-censored time-to-event variable, measured from the chosen time origin.}
+\item{outcome_time}{Name of the time-to-event/censoring variable. Time should
+be measured from a given time origin (e.g. study start, enrollment, or age)
+for all individuals.}
 
-\item{trt_name}{Name of the exposure indicator. The underlying column should be numeric
-(\code{1} = exposed during follow-up, \code{0} = never exposed during follow-up). Exposure indicator
-should indicate whether an individual is exposed while uncensored and before experiencing the endpoint of interest.}
+\item{exposure}{Name of the exposure indicator. The underlying column should
+be numeric (\code{1} = exposed during follow-up, \code{0} = never exposed during
+follow-up).}
 
-\item{time_name}{Name of the time to exposure, measured from the chosen time origin; use \code{NA} if not exposed.}
+\item{exposure_time}{Name of the time to exposure, measured from the chosen time
+origin; use \code{NA} if not exposed. Time must be measured in the same units
+(e.g. days) as that used for  \code{outcome_time}.}
 
 \item{matching_vars}{Character vector of variables to match on exactly}
 
@@ -41,7 +45,7 @@ A list containing the following:
 \itemize{
 \item \code{match_index_time}: Matching time
 \item \code{match_type}: "case" or "control"
-\item \verb{match_<trt_name>}: Treatment at matching
+\item \verb{match_<exposure>}: Treatment at matching
 \item \code{match_id}: Pair identifier
 }
 }
@@ -63,9 +67,9 @@ as a control (when they are not yet vaccinated) and as a case.
 \examples{
 matched_cohort <- match_rolling_cohort(
 data = simdata,
-outcome_name =  "Y",
-trt_name = "V",
-time_name = "D_obs",
+outcome_time =  "Y",
+exposure = "V",
+exposure_time = "D_obs",
 matching_vars = c("x1", "x2"),
 id_name = "ID",
 seed = 5678

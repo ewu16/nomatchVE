@@ -1,28 +1,32 @@
 Package: nomatchVE
-Title: Estimate Causal Vaccine Effectiveness in Observational Studies Without Matching
+Title: Estimate Causal Vaccine Effectiveness in Observational Studies
+    Without Matching
 Version: 0.0.0.9000
 Authors@R: 
-    person("Emily", "Wu", , "first.last@example.com", role = c("aut", "cre"),
-           comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: Implements estimators for a proposed causal estimand of vaccine effectiveness using observational data.
+    person("Emily", "Wu", , "emily.wu2@emory.edu", role = c("aut", "cre"),
+           comment = c(ORCID = "0009-0003-5487-6753"))
+Description: Implements estimators for a proposed causal estimand of
+    vaccine effectiveness using observational data.
 License: MIT + file LICENSE
-Encoding: UTF-8
-Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.2
+URL: https://ewu16.github.io/nomatchVE/, https://github.com/ewu16/nomatchVE
+BugReports: https://github.com/ewu16/nomatchVE/issues
+Depends: 
+    R (>= 2.10)
+Imports: 
+    ggplot2,
+    MASS,
+    methods,
+    scales,
+    stats,
+    survival
 Suggests: 
     knitr,
     rmarkdown,
     testthat (>= 3.0.0)
+VignetteBuilder: 
+    knitr
 Config/testthat/edition: 3
-Depends: 
-    R (>= 2.10)
+Encoding: UTF-8
 LazyData: true
-Imports: 
-    methods,
-    stats,
-    survival,
-    MASS,
-    ggplot2,
-    scales
-VignetteBuilder: knitr
-URL: https://ewu16.github.io/nomatchVE/
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2

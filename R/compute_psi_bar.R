@@ -17,11 +17,11 @@
 #'
 #' @export
 #'
-compute_psi_bar_times <- function(fit_0, fit_1, time_name, times, tau, newdata, gp_list){
-    out <- sapply(times, \(t){
-        compute_psi_bar_t0(fit_0, fit_1, time_name, t0 = t, tau, newdata, gp_list)
+compute_psi_bar_times <- function(fit_0, fit_1, exposure_time, eval_times, tau, newdata, gp_list){
+    out <- sapply(eval_times, \(t){
+        compute_psi_bar_t0(fit_0, fit_1, exposure_time, t0 = t, tau, newdata, gp_list)
     })
-    colnames(out) <- times
+    colnames(out) <- eval_times
     t(out)
 }
 
@@ -32,9 +32,9 @@ compute_psi_bar_times <- function(fit_0, fit_1, time_name, times, tau, newdata, 
 #' @return Named numeric vector with `cuminc_0`, `cuminc_1`
 #' @keywords internal
 #' @noRd
-compute_psi_bar_t0 <- function(fit_0, fit_1, time_name, t0, tau, newdata, gp_list){
+compute_psi_bar_t0 <- function(fit_0, fit_1, exposure_time, t0, tau, newdata, gp_list){
     # Step 1: Get conditional risks for all (d, x)
-    psi_dx <- compute_psi_dx_t0(fit_0, fit_1, time_name, t0, tau, newdata)
+    psi_dx <- compute_psi_dx_t0(fit_0, fit_1, exposure_time, t0, tau, newdata)
 
     # Step 2: Marginalize to population level
     psi_bar <- marginalize_psi_dx_t0(psi_dx, gp_list)

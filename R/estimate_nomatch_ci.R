@@ -14,7 +14,7 @@
 #' @return A list containing the following:
 #' \describe{
 #'  \item{ci_estimates}{A list of matrices containing the lower and upper confidence interval bounds and
-#'  bootstrap standard error for each term. When `confint_type = "wald"`, the bootstrapped standard errors
+#'  bootstrap standard error for each term. When `ci_type = "wald"`, the bootstrapped standard errors
 #'  on the transformed scale are also included.}
 #'  \item{n_success_boot}{The number of bootstrap samples used to compute confidence interval}
 #'  \item{boot_samples}{A matrix containing estimates from all bootstrap replications. Rows
@@ -23,26 +23,26 @@
 #' @keywords internal
 #'
 estimate_nomatch_ci <- function(data,
-                        outcome_name, event_name, trt_name, time_name,
-                        adjust_vars, weighting,
-                        times, censor_time, tau,
+                        outcome_time, outcome_status, exposure, exposure_time,
+                        covariates, weights_source,
+                        eval_times, censor_time, tau,
                         gp_list,
-                        confint_type,
+                        ci_type,
                         limit_type = "limit",
-                        n_boot,
+                        boot_reps,
                         pt_est = NULL,
                         alpha = 0.05,
-                        return_boot = TRUE,
+                        keep_boot_samples = TRUE,
                         n_cores = 1){
 
     one_boot_args <- list(data = data,
-                          outcome_name = outcome_name,
-                          event_name = event_name,
-                          trt_name = trt_name,
-                          time_name = time_name,
-                          adjust_vars = adjust_vars ,
-                          weighting = weighting,
-                          times = times,
+                          outcome_time = outcome_time,
+                          outcome_status = outcome_status,
+                          exposure = exposure,
+                          exposure_time = exposure_time,
+                          covariates = covariates ,
+                          weights_source = weights_source,
+                          eval_times = eval_times,
                           censor_time = censor_time,
                           tau = tau,
                           gp_list = gp_list,
@@ -50,11 +50,11 @@ estimate_nomatch_ci <- function(data,
 
    estimate_bootstrap_ci(one_boot_function_name = "one_boot_nomatch",
                        one_boot_args = one_boot_args,
-                       confint_type = confint_type,
-                       n_boot = n_boot,
+                       ci_type = ci_type,
+                       boot_reps = boot_reps,
                        pt_est = pt_est,
                        alpha = alpha,
-                       return_boot = return_boot,
+                       keep_boot_samples = keep_boot_samples,
                        n_cores = n_cores)
 
 }
@@ -77,9 +77,9 @@ estimate_nomatch_ci <- function(data,
 #' @keywords internal
 #'
 one_boot_nomatch <- function(data,
-                        outcome_name, event_name, trt_name, time_name,
-                        adjust_vars, weighting,
-                        times, censor_time, tau,
+                        outcome_time, outcome_status, exposure, exposure_time,
+                        covariates, weights_source,
+                        eval_times, censor_time, tau,
                         gp_list,
                         limit_type){
 
@@ -94,14 +94,14 @@ one_boot_nomatch <- function(data,
     # --------------------------------------------------------------------------
     # 2. Set marginalizing distribution based on limit type
     # --------------------------------------------------------------------------
-    if(weighting == "custom"){
+    if(weights_source == "custom"){
         limit_type <- "fixed"
     }
     if(limit_type == "fixed"){
         boot_weighting <- "custom"
         boot_custom_weights  <- gp_list
     }else if(limit_type == "limit"){
-        boot_weighting <- weighting
+        boot_weighting <- weights_source
         boot_custom_weights  <- NULL
     }
 
@@ -110,17 +110,17 @@ one_boot_nomatch <- function(data,
     # --------------------------------------------------------------------------
 
     boot_ve <- get_one_nomatch_ve(data = boot_data ,
-                          outcome_name = outcome_name,
-                          event_name = event_name,
-                          trt_name = trt_name,
-                          time_name = time_name,
-                          adjust_vars = adjust_vars ,
-                          weighting = boot_weighting,
+                          outcome_time = outcome_time,
+                          outcome_status = outcome_status,
+                          exposure = exposure,
+                          exposure_time = exposure_time,
+                          covariates = covariates ,
+                          weights_source = boot_weighting,
                           custom_weights = boot_custom_weights,
-                          times = times,
+                          eval_times = eval_times,
                           censor_time = censor_time,
                           tau = tau,
-                          return_models = FALSE,
+                          keep_models = FALSE,
                           return_gp_list = FALSE)
 
     boot_ve$estimates

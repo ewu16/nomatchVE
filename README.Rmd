@@ -13,156 +13,143 @@ knitr::opts_chunk$set(
 )
 ```
 
-# R/`nomatchVE` 
+# R/`nomatchVE`
 
 > A matching alternative for more efficiently evaluating vaccine effectiveness using observational data
 
-<!-- badges: start -->
-<!-- badges: end -->
 
 ## Description
 
-The `nomatchVE` package uses a G-computation style estimator to compute vaccine efficacy from observational vaccine studies. The proposed estimator tends to produce similar point estimates as matching-based
-estimators but is more efficient. 
+The `nomatchVE` package uses a G-computation style estimator to compute vaccine effectiveness from observational vaccine studies. The proposed estimator tends to produce similar point estimates as matching-based estimators but can be more efficient.
 
 ## Installation
 
-You can install the development version of `nomatchVE` like so:
+You can install the development version of `nomatchVE` with:
 
 ``` r
-# TODO: not yet available on Github 
 # install.packages("devtools")
 devtools::install_github("ewu16/nomatchVE")
 ```
 
 ## Example
 
-This minimal example shows how to use `nomatchVE` to obtain cumulative incidence
-and vaccine effectiveness estimates in a simple simulated data set. 
+This minimal example shows how to use `nomatchVE` to obtain cumulative incidence and vaccine effectiveness estimates in a simple simulated data set.
 
 ```{r example, fig.width = 8, fig.height = 4}
+#Load package
 library(nomatchVE)
-# Set seed for reproducibility 
-set.seed(1234)
 
-# ------------------------------------------------------------------------------
 # Example data
 head(simdata)
 summary(simdata)
+```
 
+```{r, include = FALSE}
 # ------------------------------------------------------------------------------
-# 1. Set input parameters
-outcome_name <- "Y"
-event_name <- "event"
-trt_name <- "V"
-time_name <- "D_obs"
-adjust_vars <- c("x1", "x2")
+# Set input parameters
+data <- simdata 
+outcome_time <- "Y"
+outcome_status <- "event"
+exposure <- "V"
+exposure_time <- "D_obs"
+covariates <- c("x1", "x2")
 
-times <- seq(30, 180, by = 30)
-censor_time <- max(times)
+eval_times <- seq(30, 180, by = 30)
+censor_time <- max(eval_times)
 tau <- 14
 ci_type <- "wald"
-n_boot <- 10
+boot_reps <- 10
 alpha <- .05
 
-# ------------------------------------------------------------------------------
-# 2. Compute VE estimand at time points 
+id_name <- "ID"
+matching_vars <- covariates
+```
 
+```{r}
+
+# Compute cumulative incidence 
 fit1 <- nomatchVE(data = simdata,
-              outcome_name = outcome_name,
-              event_name = event_name,
-              trt_name = trt_name,
-              time_name = time_name, 
-              adjust_vars = adjust_vars,
-              times = times,
-              censor_time = censor_time, 
-              tau = tau,
-              ci_type = ci_type,
-              n_boot = n_boot, 
-              alpha = alpha)
-             
-fit1$estimates
+                  outcome_time = "Y",
+                  outcome_status = "event",
+                  exposure = "V",
+                  exposure_time = "D_obs", 
+                  covariates = c("x1", "x2"),
+                  tau = 14,
+                  eval_times = seq(30, 180, by = 30),
+                  boot_reps = 10)
+
+#Print results 
+fit1        
+
+#Summary 
+summary(fit1)
 
 #Plot pointwise intervals 
-plot_ve_panel(fit1 , ci_type = "wald") 
+plot(fit1) 
 
 #Compute simultaneous CI
-simul_ci <- simultaneous_ci(fit1, alpha, seed = 1234)
-simul_ci$estimates
+fit1_with_simul <- add_simultaneous_ci(fit1, seed = 1234)
 
 #Plot simultaneous confidence bands 
-plot_ve_panel(simul_ci , ci_type = "simul") 
+plot(fit1_with_simul , ci_type = "simul") 
+```
 
- 
-
-
+```{r}
 # ------------------------------------------------------------------------------
 # 3. Compare results with matching estimator
 
-id_name <- "ID"
-matching_vars <- adjust_vars
+
 
 matched_cohort <- match_rolling_cohort(data = simdata,
-                                       outcome_name = outcome_name,
-                                       trt_name = trt_name,
-                                       time_name = time_name,
-                                       id_name = id_name,
-                                       matching_vars = adjust_vars,
-                                       replace = FALSE,
+                                       outcome_time = "Y",
+                                       exposure = "V",
+                                       exposure_time = "D_obs", 
+                                       matching_vars = c("x1", "x2"),
+                                       id_name = "ID",
                                        seed = 5678)
 
 matched_data <- matched_cohort[[1]]
 
 
 fit_matching <-matching_ve(matched_data = matched_data,
-                           outcome_name = outcome_name,
-                           event_name = event_name,
-                           trt_name = trt_name,
-                           time_name = time_name,
-                           method = "km",
-                           times = times,
-                           censor_time = censor_time,
-                           tau = tau,
-                           ci_type = ci_type,
-                           n_boot = n_boot,
-                           alpha = alpha) 
-   
+                           outcome_time = "Y",
+                           outcome_status = "event",
+                           exposure = "V",
+                           exposure_time = "D_obs", 
+                           tau = 14,
+                           eval_times = seq(30, 180, by = 30),
+                           boot_reps = 10) 
 
-## Proposed and matching based estimators have similar point estimates
-##  Proposed has narrower confidence intervals 
-fit1$estimates
-fit_matching$estimates
+fit_matching
+
+## Plot matching vs proposed estimator - nomatch tends to have similar point estimates but narrower
+# confidence intervals
+compare_ve_fits(fit_matching, fit1, labels = c("Matching", "nomatch (G-computation)"))
 ```
 
+## Issues
 
+If you encounter any bugs or have any specific feature requests, please [file an issue](https://github.com/ewu16/nomatchVE/issues).
 
-```{r, eval = FALSE, include = FALSE}
+## Citation
 
-#proposed with matching marginalizing distribution 
+If you use the `nomatchVE` package in your work, please cite the following:
 
-fit2 <- nomatchVE(data = simdata,
-              outcome_name = outcome_name,
-              event_name = event_name,
-              trt_name = trt_name,
-              time_name = time_name,
-              adjust_vars = adjust_vars,
-              marginalizing_dist = "matched",
-              matched_dist_options = matched_dist(matched_data = matched_data,
-                                                  pair_censoring = TRUE),
-              times = times,
-              censor_time = censor_time, 
-              tau = tau,
-              ci_type = ci_type,
-              limit_type =  limit_type,
-              n_boot = n_boot, 
-              alpha = alpha)
-
-
-## Either choice of marginalizing distribution leads to similar estimates
-fit1$estimates
-
-fit2$estimates
-
+```{r, include = FALSE}
+c <- citation("nomatchVE")
+toBibtex(c)
+```
 
 ```
+ @Manual{,
+   title = {nomatchVE: Estimate Causal Vaccine Effectiveness in Observational Studies
+             Without Matching},
+   author = {Emily Wu},
+   year = {2025},
+   note = {R package version 0.0.0.9000, 
+   https://github.com/ewu16/nomatchVE},
+   url = {https://ewu16.github.io/nomatchVE/},
+ }
+ ```
+ 
 

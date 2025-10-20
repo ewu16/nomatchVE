@@ -2,28 +2,26 @@
 % Please edit documentation in R/utils.R
 \name{estimates_to_df}
 \alias{estimates_to_df}
-\title{Convert VE estimates to tidy long-format data frame}
+\title{Convert estimates to tidy long-format data frame}
 \usage{
 estimates_to_df(estimates)
 }
 \arguments{
 \item{estimates}{A list of matrices, typically from \code{fit$estimates} in a \code{vefit}
-object. Each matrix (e.g., \code{cuminc_0}, \code{cuminc_1}, \code{ve}) has:
-\itemize{
-\item \strong{Rows:} Timepoints, with row names giving time values (e.g., \code{"90"} for day 90)
-\item \strong{Columns:} Estimates, confidence intervals, and related statistics.
-}}
+object. Each matrix (e.g., \code{cuminc_0}, \code{cuminc_1}, \code{vaccine_effectiveness}/\code{risk_ratio})
+contains estimates, confidence intervals, and related statistics evaluated
+at different timepoints.}
 }
 \value{
 A long-format data frame with:
 \itemize{
 \item \code{t0}: the timepoint
-\item \code{term}: what was estimated (\code{cuminc_0}, \code{cuminc_1}, or \code{ve})
-\item Remaining columns from the original matrices (estimates, confidence intervals, etc.)
+\item \code{term}: what was estimated (\code{cuminc_0}, \code{cuminc_1}, or \code{vaccine_effectiveness}/\code{risk_ratio})
+\item Remaining columns from the original matrices (estimates, confidence intervals, ad related statistics.)
 }
 }
 \description{
-Converts the \code{estimates} component of a \code{vefit} object into a single
+Converts the \code{estimates} component of a \code{vefit} object into a
 long-format data frame for easy plotting and analysis.
-Each row represents one term (cumulative incidence or VE) at a specific timepoint.
+Each row represents one term (cumulative incidence or derived effect measure) at a specific timepoint.
 }

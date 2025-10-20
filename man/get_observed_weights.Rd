@@ -2,41 +2,63 @@
 % Please edit documentation in R/get_marginalizing_weights.R
 \name{get_observed_weights}
 \alias{get_observed_weights}
-\title{Estimate marginalizing weights from observed data}
+\title{Estimate observed distributions of exposure eval_times and covariates}
 \usage{
-get_observed_weights(data, outcome_name, trt_name, time_name, adjust_vars, tau)
+get_observed_weights(
+  data,
+  outcome_time,
+  exposure,
+  exposure_time,
+  covariates,
+  tau
+)
 }
 \arguments{
-\item{outcome_name}{Name of the possibly-censored time-to-event variable, measured from the chosen time origin.}
+\item{outcome_time}{Name of the time-to-event/censoring variable. Time should
+be measured from a given time origin (e.g. study start, enrollment, or age)
+for all individuals.}
 
-\item{trt_name}{Name of the exposure indicator. The underlying column should be numeric
-(\code{1} = exposed during follow-up, \code{0} = never exposed during follow-up). Exposure indicator
-should indicate whether an individual is exposed while uncensored and before experiencing the endpoint of interest.}
+\item{exposure}{Name of the exposure indicator. The underlying column should
+be numeric (\code{1} = exposed during follow-up, \code{0} = never exposed during
+follow-up).}
 
-\item{time_name}{Name of the time to exposure, measured from the chosen time origin; use \code{NA} if not exposed.}
+\item{exposure_time}{Name of the time to exposure, measured from the chosen time
+origin; use \code{NA} if not exposed. Time must be measured in the same units
+(e.g. days) as that used for  \code{outcome_time}.}
 
-\item{adjust_vars}{Character vector of baseline covariates to adjust for when fitting the hazard models.}
+\item{covariates}{Character vector of covariates to adjust for when fitting
+the hazard models. These covariates should include all known confounders of
+exposure and censoring measured at the chosen time origin.}
 
 \item{tau}{Numeric. Only vaccinated who are at-risk tau days after vaccination are included.}
 }
-\description{
-Computes empirical probability distributions g(d|x) and P(x) from
-vaccinated individuals who remain at risk tau days post-vaccination.
-
-Most users don't need to call this directly - \code{\link[=nomatchVE]{nomatchVE()}} handles
-it automatically. This function can be used for
+\value{
+A list with two data frames:
 \itemize{
-\item Creating custom marginalizing distributions
-\item Diagnosing estimation issues
-\item Comparing different target populations
+\item \code{g_weights}: covariate-conditional exposure time  probabilities (\eqn{g(d \mid x)})
+\item \code{p_weights}: covariate probabilities (\eqn{p(x)})
+
+Each data frame includes all variables in \code{covariates}, and a \code{prob} column
+with empirical probabilities.
+\code{g_weights} additionally includes a \verb{<exposure_time>} column for exposure eval_times.
 }
+}
+\description{
+Computes two empirical probability distributions used to marginalize
+time- and covariate- specific cumulative incidences:
+\itemize{
+\item \eqn{g(d \mid x)}: the distribution of exposure eval_times within each covariate subgroup
+of exposed individuals who remain at risk \code{tau} days after exposure.
+\item \eqn{p(x)}: the distribution of covariates among exposed individuals
+who remain at risk \code{tau} days after exposure.
+}
+
+Called internally by \code{\link[=nomatchVE]{nomatchVE()}}. Provided as an example of the
+structure needed if a user passes in \code{custom_weights}.
 }
 \examples{
-\dontrun{
-
-# Advanced: Create distributions manually
-gp_list <- get_marginalizing_dist(simdata, "Y", "V", "D_obs",
+weights <- get_observed_weights(simdata, "Y", "V", "D_obs",
                                    c("x1", "x2"), tau = 14)
-}
+str(weights)
 
 }

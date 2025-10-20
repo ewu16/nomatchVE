@@ -4,13 +4,13 @@
 \alias{plot.vefit}
 \title{Plot method for vefit objects}
 \usage{
-\method{plot}{vefit}(object, confint_type = NULL, color = "#0072B2")
+\method{plot}{vefit}(object, ci_type = NULL, color = "#0072B2")
 }
 \arguments{
 \item{object}{An object of class \code{vefit} created by \code{\link[=nomatchVE]{nomatchVE()}} or \code{\link[=matching_ve]{matching_ve()}}.}
 
-\item{confint_type}{Character string specifying the type of confidence interval bands to plot.
-One of "wald", "percentile", "simul", or "none". Must choose a \code{confint_type} whose lower
+\item{ci_type}{Character string specifying the type of confidence interval bands to plot.
+One of "wald", "percentile", "simul", or "none". Must choose a \code{ci_type} whose lower
 and upper bounds are already computed in \code{object$estimates} component of \code{object}.}
 
 \item{color}{Aesthetic value to map data values to. Default: \code{"#0072B2"} (blue)}

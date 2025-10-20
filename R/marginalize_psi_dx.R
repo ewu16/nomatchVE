@@ -7,8 +7,8 @@
 #' average.
 #'
 #' @param psi_dx A data frame with conditional risk predictions containing:
-#'   - `<adjust_vars>`: all covariate columns
-#'   - `<time_name>`: vaccination day column
+#'   - `<covariates>`: all covariate columns
+#'   - `<exposure_time>`: vaccination day column
 #'   - `psi_0_dx`: cumulative incidence under no vaccine,\eqn{\psi_0(t_0; d, x)}
 #'   - `psi_1_dx`: cumulative incidence  under vaccine,\eqn{\psi_1(t_0; d, x)}
 #'
@@ -19,15 +19,15 @@
 #' \item{g_weights}{Data frame of covariate-conditional exposure-day probabilities \eqn{g(d \mid x)}.
 #'    Must include:
 #'    - `group_id`:covariate group identifier
-#'    - `<time_name>`: exposure time variable
+#'    - `<exposure_time>`: exposure time variable
 #'    - `prob_g`: probability of exposure time given the covariates
-#'     - all variables in `adjust_vars`
+#'     - all variables in `covariates`
 #'  }
 #' \item{p_weights}{Data frame of covariate probabilities \eqn{p(x)}.
 #'     Must include:
 #'     - `group_id`: covariate group identifier
 #'     - `prob_p`: marginal probability of each covariate group
-#'     - all variables in `adjust_vars`
+#'     - all variables in `covariates`
 #'  }
 #' }
 #'

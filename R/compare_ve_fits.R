@@ -8,9 +8,9 @@
 #' @param fit2 A vefit object (typically from \code{\link{nomatchVE}})
 #' @param labels Character vector of length 2 providing labels for the two methods.
 #'  Default is \code{c("Method 1", "Method 2")}.
-#' @param confint_type Character string specifying the type of confidence interval to plot.
+#' @param ci_type Character string specifying the type of confidence interval to plot.
 #'   One of "wald", "percentile", or "simul". If \code{NULL} (default), uses the
-#'   CI type from \code{fit1}. If the object has \code{confint_type = "both"},
+#'   CI type from \code{fit1}. If the object has \code{ci_type = "both"},
 #'   defaults to "wald".
 #' @param colors Character vector of length 2 providing colors for the two methods.
 #'   Default is \code{c("#F8766D", "#00BFC4")} (ggplot2's default red and cyan).
@@ -41,7 +41,7 @@
 compare_ve_fits <- function(fit1,
                             fit2,
                             labels = c("Method 1", "Method 2"),
-                            confint_type = NULL,
+                            ci_type = NULL,
                             colors = c("#F8766D", "#00BFC4")) {
 
     # Validation
@@ -53,8 +53,8 @@ compare_ve_fits <- function(fit1,
         stop("labels and colors must be vectors of length 2", call. = FALSE)
     }
 
-    confint_type <- validate_confint_type(fit1, confint_type)
-    confint_type <- validate_confint_type(fit2, confint_type)
+    ci_type <- validate_confint_type(fit1, ci_type)
+    ci_type <- validate_confint_type(fit2, ci_type)
 
     alpha1 <- fit1$alpha
     alpha2 <- fit2$alpha
@@ -77,7 +77,7 @@ compare_ve_fits <- function(fit1,
     # Call internal plotting function
     plot_ve_panel(
         plot_data = plot_data,
-        confint_type = confint_type,
+        ci_type = ci_type,
         alpha = alpha1,
         colors = colors
     )

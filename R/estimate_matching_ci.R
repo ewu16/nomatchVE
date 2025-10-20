@@ -13,19 +13,19 @@
 #'  \item{boot_samples}{A matrix containing estimates from all bootstrap replications. Rows
 #'  represent bootstrap iterations, columns the term estimated.}
 #' }
-#' @export
+#'
+#' @keywords internal
 #'
 estimate_matching_ci <- function(matched_data,
-                                 outcome_name = outcome_name,
-                                 event_name,
-                                 trt_name,
-                                 time_name,
-                                 method,
-                                 adjust,
-                                 times,
-                                 censor_time,
+                                 outcome_time = outcome_time,
+                                 outcome_status,
+                                 exposure,
+                                 exposure_time,
+                                 method = "km",
+                                 adjust = NULL,
+                                 eval_times,
+                                 censor_time = NULL,
                                  tau,
-                                 pair_censoring = pair_censoring,
                                  separate = FALSE,
                                  ci_type = "wald",
                                  limit_type = "fixed",
@@ -33,38 +33,37 @@ estimate_matching_ci <- function(matched_data,
                                  id_name = "ID",
                                  matching_vars = NULL,
                                  replace  = FALSE,
-                                 n_boot = 0,
+                                 boot_reps = 0,
                                  pt_est = NULL,
                                  alpha = 0.05,
-                                 return_boot,
+                                 keep_boot_samples,
                                  n_cores = 1){
 
     one_boot_args <- list(matched_data = matched_data,
-                          outcome_name = outcome_name,
-                          event_name = event_name,
-                          trt_name = trt_name,
-                          time_name = time_name,
+                          outcome_time = outcome_time,
+                          outcome_status = outcome_status,
+                          exposure = exposure,
+                          exposure_time = exposure_time,
                           method = method,
                           adjust = adjust,
-                          times = times,
+                          eval_times = eval_times,
                           censor_time = censor_time,
                           tau = tau,
-                          pair_censoring = pair_censoring,
                           separate = separate,
                           limit_type = limit_type,
                           data = data,
                           id_name = id_name,
                           matching_vars = matching_vars,
                           replace = replace,
-                          return_boot = return_boot)
+                          keep_boot_samples = keep_boot_samples)
 
-    estimate_general_ci(one_boot_function_name = "one_boot_matching",
+    estimate_bootstrap_ci(one_boot_function_name = "one_boot_matching",
                         one_boot_args = one_boot_args,
                         ci_type = ci_type,
-                        n_boot = n_boot,
+                        boot_reps = boot_reps,
                         pt_est = pt_est,
                         alpha = alpha,
-                        return_boot = return_boot,
+                        keep_boot_samples = keep_boot_samples,
                         n_cores = n_cores)
 }
 
@@ -76,34 +75,35 @@ estimate_matching_ci <- function(matched_data,
 #' @return  A matrix of bootstrapped estimates where the the columns of the matrix are the cumulative
 #'  incidence/VE terms and the rows are the requested time points for evaluation.
 #'
+#' @keywords internal
+#'
 one_boot_matching <- function(matched_data,
-                              outcome_name,
-                              event_name,
-                              trt_name,
-                              time_name,
+                              outcome_time,
+                              outcome_status,
+                              exposure,
+                              exposure_time,
                               method,
-                              adjust,
-                              times,
-                              censor_time,
+                              adjust = NULL ,
+                              eval_times,
+                              censor_time = NULL,
                               tau,
-                              pair_censoring = TRUE,
                               separate = FALSE,
                               limit_type = "fixed",
                               data = NULL,
                               id_name = "ID",
                               matching_vars = NULL,
                               replace = FALSE,
-                              return_boot = TRUE){
+                              keep_boot_samples = TRUE){
 
     # --------------------------------------------------------------------------
     # 1. Create bootstrapped sample(s)
     # --------------------------------------------------------------------------
     if(limit_type == "fixed"){
         #bootstrap from fixed matched cohort
-        boot_matched_ids <- sample(unique(matched_data$pair_id), replace = TRUE)
-        boot_matched_inds <- as.vector(sapply(boot_matched_ids, \(pair_id) which(matched_data$pair_id == pair_id)))
+        boot_matched_ids <- sample(unique(matched_data$match_id), replace = TRUE)
+        boot_matched_inds <- as.vector(sapply(boot_matched_ids, \(match_id) which(matched_data$match_id == match_id)))
         boot_matched_data <- matched_data[boot_matched_inds,]
-        boot_matched_data$pair_id <- rep(1:length(boot_matched_ids), each = 2)
+        boot_matched_data$match_id <- rep(1:length(boot_matched_ids), each = 2)
     }else if(limit_type == "limit"){
         #cat("Limit: \n")
         stopifnot("Need to provide original data for limit matching confidence intervals" =
@@ -114,9 +114,9 @@ one_boot_matching <- function(matched_data,
         boot_id_name <- paste0("boot_",id_name)
         boot_data[[boot_id_name]] <- 1:nrow(boot_data)
         boot_matched_cohort <- match_rolling_cohort(data = boot_data,
-                                                  outcome_name = outcome_name,
-                                                  trt_name = trt_name,
-                                                  time_name = time_name,
+                                                  outcome_time = outcome_time,
+                                                  exposure = exposure,
+                                                  exposure_time = exposure_time,
                                                   id_name =  boot_id_name,
                                                   matching_vars = matching_vars,
                                                   replace = replace)
@@ -128,18 +128,17 @@ one_boot_matching <- function(matched_data,
     # 2. Compute VE for bootstrapped data
     # --------------------------------------------------------------------------
     boot_matching_ve <- get_one_matching_ve(matched_data = boot_matched_data,
-                                            outcome_name = outcome_name,
-                                            event_name = event_name,
-                                            trt_name = trt_name,
-                                            time_name = time_name,
+                                            outcome_time = outcome_time,
+                                            outcome_status = outcome_status,
+                                            exposure = exposure,
+                                            exposure_time = exposure_time,
                                             method = method,
                                             adjust = adjust,
-                                            times = times,
+                                            eval_times = eval_times,
                                             censor_time = censor_time,
                                             tau = tau,
-                                            pair_censoring = pair_censoring,
                                             separate = separate,
-                                            return_models = FALSE)
+                                            keep_models = FALSE)
 
     boot_matching_ve$estimates
 }

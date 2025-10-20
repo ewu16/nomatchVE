@@ -6,4 +6,5 @@
 .quarto
 inst/doc
 check_code/
+*_advanced.R
 docs

@@ -1,54 +1,41 @@
 url: https://ewu16.github.io/nomatchVE/
 template:
-  bootstrap: 5
+  bootstrap: 5 # visual framework of pkgdown website
 reference:
-- title: Proposed method
-  contents: nomatchVE
-- subtitle: Estimation
+- title: Main functions
+  desc: Primary user-facing functions
   contents:
-  - get_one_ve
-  - get_observed_gp
-  - get_matching_gp
-  - get_gp
-  - fit_model_0
-  - predict_from_model_0
-  - compute_psi_d
-  - compute_psi_bar
-  - compute_ve_t0
-  - compute_ve
-- subtitle: Inference
+  - nomatchVE
+  - add_simultaneous_ci
+  - plot.vefit
+  - compare_ve_fits
+
+- title: Matching-based estimation
+  desc: Functions for matching cohort design and estimation
   contents:
-  - estimate_ci
-  - one_boot_ve
-- title: Matching
-  contents:
-  - matching_ve
   - match_rolling_cohort
-  - matched_dist
-- subtitle: Estimation
+  - matching_ve
+
+- title: Proposed method estimation
+  desc: Core estimation functions for the g-computation approach
   contents:
-  - clean_matched_data
-  - match_adata
-  - get_one_matching_ve
-  - compute_marginal_ve
-  - compute_cox_ve
-  - compute_km_ve
-- subtitle: Inference
-  contents:
-  - estimate_matching_ci
-  - one_boot_matching
-- title: Data
-  contents: simdata
+  - fit_model_0
+  - get_observed_weights
+  - compute_psi_dx_t0
+  - marginalize_psi_dx_t0
+  - compute_psi_bar_times
+
 - title: Utilities
+  desc: Helper functions for data manipulation and formatting
   contents:
-  - estimate_general_ci
-  - compute_boot_ci
-  - compute_wald_ci
-  - compute_percentile_ci
+  - print.vefit
+  - summary.vefit
   - estimates_to_df
-  - estimates_by_time
-- title: In Progress
+
+- title: Data
   contents:
-  - simultaneous_ci
-  - plot_ve_panel
+  - simdata
+
+
+
 

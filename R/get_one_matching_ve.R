@@ -8,39 +8,39 @@
 #' @inheritParams matching_ve
 #'
 #' @return The object returned by [compute_marginal_ve()]
-#' @export
+#' @keywords internal
 #'
 get_one_matching_ve <- function(matched_data,
-                                outcome_name,
-                                event_name,
-                                trt_name,
-                                time_name,
-                                method,
-                                adjust,
-                                times,
-                                censor_time,
+                                outcome_time,
+                                outcome_status,
+                                exposure,
+                                exposure_time,
                                 tau,
-                                pair_censoring = TRUE,
+                                eval_times,
+                                method = "km",
+                                censor_time = NULL,
+                                adjust = NULL,
                                 separate = TRUE,
-                                return_models = TRUE){
+                                keep_models = TRUE){
+
+
     matched_adata <- clean_matched_data(matched_data = matched_data,
-                                        outcome_name = outcome_name,
-                                        event_name = event_name,
-                                        trt_name = trt_name,
-                                        time_name = time_name,
-                                        tau = tau,
-                                        pair_censoring = pair_censoring)
+                                        outcome_time = outcome_time,
+                                        outcome_status = outcome_status,
+                                        exposure = exposure,
+                                        exposure_time = exposure_time,
+                                        tau = tau)
 
     estimates <- compute_marginal_ve(adata = matched_adata,
-                                     adata_outcome_name = "T_d",
-                                     adata_event_name = paste0(event_name, "_d"),
-                                     adata_trt_name = paste0(trt_name, "_d"),
+                                     adata_outcome_name = "match_T",
+                                     adata_event_name =  paste0("match_", outcome_status),
+                                     adata_trt_name = paste0("match_", exposure),
                                      method = method,
                                      adjust = adjust,
-                                     times = times,
+                                     eval_times = eval_times,
                                      censor_time = censor_time,
                                      separate = separate,
-                                     return_models = return_models)
+                                     keep_models = keep_models)
     estimates
 }
 

@@ -6,68 +6,70 @@
 \usage{
 one_boot_nomatch(
   data,
-  outcome_name,
-  event_name,
-  trt_name,
-  time_name,
-  adjust_vars,
-  weighting,
-  times,
+  outcome_time,
+  outcome_status,
+  exposure,
+  exposure_time,
+  covariates,
+  weights_source,
+  eval_times,
   censor_time,
   tau,
-  boot_formula_0,
-  boot_formula_1,
-  matched_data,
   gp_list,
   limit_type
 )
 }
 \arguments{
-\item{data}{A data frame with one row per individual containing
-the columns named in \code{outcome_name}, \code{event_name}, \code{trt_name}, \code{time_name},
-and any variables listed in \code{adjust_vars}.}
+\item{data}{A data frame with one row per individual containing the columns
+named in \code{outcome_time}, \code{outcome_status}, \code{exposure}, \code{exposure_time}, and any
+variables listed in \code{covariates}.}
 
-\item{outcome_name}{Name of the possibly-censored time-to-event variable, measured from the chosen time origin.}
+\item{outcome_time}{Name of the time-to-event/censoring variable. Time should
+be measured from a given time origin (e.g. study start, enrollment, or age)
+for all individuals.}
 
-\item{event_name}{Name of the event indicator. The underlying column should be numeric
-(\code{1} = event, \code{0} = censored).}
+\item{outcome_status}{Name of the event indicator. The underlying column should be
+numeric (\code{1} = event, \code{0} = censored).}
 
-\item{trt_name}{Name of the exposure indicator. The underlying column should be numeric
-(\code{1} = exposed during follow-up, \code{0} = never exposed during follow-up). Exposure indicator
-should indicate whether an individual is exposed while uncensored and before experiencing the endpoint of interest.}
+\item{exposure}{Name of the exposure indicator. The underlying column should
+be numeric (\code{1} = exposed during follow-up, \code{0} = never exposed during
+follow-up).}
 
-\item{time_name}{Name of the time to exposure, measured from the chosen time origin; use \code{NA} if not exposed.}
+\item{exposure_time}{Name of the time to exposure, measured from the chosen time
+origin; use \code{NA} if not exposed. Time must be measured in the same units
+(e.g. days) as that used for  \code{outcome_time}.}
 
-\item{adjust_vars}{Character vector of baseline covariates to adjust for when fitting the hazard models.}
+\item{covariates}{Character vector of covariates to adjust for when fitting
+the hazard models. These covariates should include all known confounders of
+exposure and censoring measured at the chosen time origin.}
 
-\item{weighting}{Character string specifying the type of marginalizing weights to use.
-Either:
+\item{weights_source}{Character string specifying the type of marginalizing weights
+to use. Either:
 \itemize{
-\item \code{"observed"} (default): use the empirical distribution of time to exposure and covariates among the exposed as the
-marginalizing weights. This provides close alignment with the weights implicitly used in matching.
-\item \code{"custom"}: use user-specified weights provided in the \code{custom_weights} argument
+\item \code{"observed"} (default): set the marginalizing weights to the empirical
+distribution of exposure eval_times and covariates among the exposed. This
+provides close alignment with the weights implicitly used in matching.
+\item \code{"custom"}: use the user-specified weights provided in the \code{custom_weights} argument.
 }}
 
-\item{times}{Numeric vector of time after exposure at which to evaluate VE. All values must be greater than tau and
-should reflect meaningful clinical timepoints (e.g., 30, 60, 90 days).}
+\item{eval_times}{Numeric vector specifying the timepoints at which to compute
+cumulative incidence and the derived effect measures. The timepoints should
+be expressed in terms of time since exposure. All values must be greater
+than \code{tau} and and should correspond to clinically meaningful follow-up
+durations, such as 30, 60, or 90 days after exposure. A fine grid of
+timepoints (e.g., \code{eval_times = (tau+1):100}) can be provided if cumulative
+incidence curves over time are desired.}
 
-\item{censor_time}{Time after exposure at which exposed
-individuals are administratively censored during model fitting. Default:
-\code{max(times)}. This is used to limit borrowing of information from beyond the time period of interest.}
+\item{tau}{Non-negative numeric value specifying the time after exposure that
+should be excluded from the risk evaluation period. This argument is
+primarily intended for vaccination exposures, where it is common to exclude
+the time after vaccination when immunity is still building. Time must be
+measured in the same units as that used for \code{outcome_time} and \code{exposure_time}
+and should reflect the biological understanding of when vaccine-induced
+immunity develops (usually 1-2 weeks). For non-vaccine exposures, \code{tau} can
+be set to 0 (no delay period).}
 
-\item{tau}{Time after exposure (vaccination)  to exclude as part of an "immune build-up" period. Must be non-negative.
-Common values may include 0 days (no delay), 7 days (one week), 14 days (two weeks) and should
-match the biological understanding of when vaccine-induced immunity develops.}
-
-\item{boot_formula_0}{A formula for estimating hazards in
-unvaccinated group for bootstrap samples (not a model)}
-
-\item{boot_formula_1}{A formula for estimating hazards in
-vaccinated group for bootstrap samples (not a model)}
-
-\item{matched_data}{A data frame representing the matched cohort}
-
-\item{gp_list}{List of two dataframes named \code{g_dist} and \code{p_dist} representing
+\item{gp_list}{List of two dataframes named \code{g_weights} and \code{p_weights} representing
 the marginalizing distributions to use.}
 }
 \value{

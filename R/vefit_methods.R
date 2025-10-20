@@ -15,30 +15,53 @@
 #'
 #' @export
 print.vefit <- function(object, digits = 3, ...) {
-    cat("\nVaccine Effectiveness Estimates\n")
+    if(object$effect == "vaccine_effectiveness"){
+        title <- "Vaccine Effectiveness Estimates"
+        effect_term <- "vaccine_effectiveness"
+    }else if(object$effect == "risk_ratio"){
+        title <- "Risk Ratio Estimates"
+        effect_term <- "risk_ratio"
+    }
+    cat("\n", title, "\n")
     cat(strrep("=", 50), "\n")
 
     # Key identifying info
-    cat("Method:", object$method, "\n")
-    cat("Times:", paste(object$times, collapse = ", "), "\n")
-    cat("Tau:", object$tau, "\n")
+    #cat("Method:", object$method, "\n")
+    cat("Call:", paste(deparse(object$call), collapse = "\n"), "\n")
 
-    # The main result - VE estimates
-    cat("\nVE Estimates:\n")
-    ve_mat <- object$estimates$ve
+    # The main result
+    cat("\nResult:\n")
+    effect <- setNames(list(object$estimates[[effect_term]]), effect_term)
+    effect_df <- estimates_to_df(effect)
 
-    # Show estimate and CI if available
-    display_cols <- c("estimate",
-                      grep("lower$", colnames(ve_mat), value = TRUE),
-                      grep("upper$", colnames(ve_mat), value = TRUE))
-    display_cols <- display_cols[!is.na(display_cols)]
-    print(round(ve_mat[, display_cols, drop = FALSE], digits))
+    display_cols <- c("t0", "estimate",
+                      grep("lower$", names(effect_df), value = TRUE),
+                      grep("upper$", names(effect_df), value = TRUE))
 
+    ci_level <- (1-object$alpha)*100
+    name_map <- c(
+        t0                = "Timepoint",
+        estimate          = "Estimate",
+        wald_lower        = paste0(ci_level, "% Wald CI: Lower"),
+        wald_upper        = paste0(ci_level, "% Wald CI: Upper"),
+        percentile_lower  = paste0(ci_level, "% Percentile CI: Lower"),
+        percentile_upper  = paste0(ci_level, "% Percentile CI: Upper")
+    )
+
+    display_labels <- name_map[display_cols]
+    names(effect_df)[names(effect_df) %in% display_cols] <- display_labels
+
+    print(head(effect_df[display_labels], 10), digits = digits)
+
+    # Print how many rows remain
+    remaining <- nrow(effect_df) - 10
+    if(remaining > 0){
+        cat("\nRemaining rows:", remaining, "\n")
+    }
 
     # Hint for more info
-    cat("\n")
-    cat("Call summary() for more details\n")
-    cat("Call plot() to visualize results\n")
+    cat("\nUse summary() for more details\n")
+    cat("Use plot() to visualize results\n")
 
 
     invisible(object)
@@ -59,51 +82,61 @@ print.vefit <- function(object, digits = 3, ...) {
 #'
 #' @export
 summary.vefit <- function(object, digits = 4, ...) {
+    if(object$effect == "vaccine_effectiveness"){
+        title <- "Vaccine Effectiveness"
+        effect_term <- "vaccine_effectiveness"
+    }else if(object$effect == "risk_ratio"){
+        title <- "Risk Ratio"
+        effect_term <- "risk_ratio"
+    }
+
     cat("\n")
     cat(strrep("=", 70), "\n")
-    cat("Vaccine Effectiveness Analysis Summary\n")
+    cat(title, "Analysis Summary\n")
     cat(strrep("=", 70), "\n\n")
 
     # ---- Key Parameters ----
     cat("Method:             ", object$method, "\n")
-    cat("Evaluation times:   ", paste(object$times, collapse = ", "), "\n")
+    cat("Evaluation eval_times:   ", paste(object$eval_times, collapse = ", "), "\n")
     cat("Tau (delay period): ", object$tau, "\n")
-    cat("Censoring time:     ", object$censor_time, "\n")
 
-    if (length(object$adjust_vars) > 0) {
-        cat("Adjusted for:       ", paste(object$adjust_vars, collapse = ", "), "\n")
+
+    if (length(object$covariates) > 0) {
+        cat("Adjusted for:       ", paste(object$covariates, collapse = ", "), "\n")
     }
 
     # ---- Bootstrap Info (if applicable) ----
-    if (object$n_boot > 0) {
-        cat("\nBootstrap:          ", object$n_boot, "replicates\n")
+    if (object$boot_reps > 0) {
+        cat("\nBootstrap:          ", object$boot_reps, "replicates\n")
         cat("Confidence level:   ", (1 - object$alpha) * 100, "%\n")
         cat("Successful samples: ",
             paste(range(object$n_success_boot), collapse = "-"),
             " (range across timepoints)\n")
     } else {
-        cat("\nNo bootstrap performed (n_boot = 0)\n")
+        cat("\nNo bootstrap performed (boot_reps = 0)\n")
     }
+
+
+    # cat("N total:")
+    # cat("Unexposed:")
+    # cat("Exposed:")
+    # cat("Exposed remaining at-risk tau days after exposure:")
+
+
+
 
     # ---- Main Results ----
     cat("\n")
     cat(strrep("-", 70), "\n")
-    cat("Cumulative Incidence:", object$trt_name, "= 0\n")
+    cat(title, "\n")
     cat(strrep("-", 70), "\n")
-    print(round(object$estimates$cuminc_0, digits))
+    print(head(round(object$estimates[[effect_term]], digits)))
 
-    cat("\n")
-    cat(strrep("-", 70), "\n")
-    cat("Cumulative Incidence:", object$trt_name, "= 1\n")
-    cat(strrep("-", 70), "\n")
-    print(round(object$estimates$cuminc_1, digits))
-
-    cat("\n")
-    cat(strrep("-", 70), "\n")
-    cat("Vaccine Effectiveness\n")
-    cat(strrep("-", 70), "\n")
-    print(round(object$estimates$ve, digits))
-
+    # Print how many rows remain
+    remaining <- nrow(object$estimates[[effect_term]]) - 6
+    if(remaining > 0){
+        cat("\nRemaining rows:", remaining, "\n")
+    }
 
     cat("\n")
     cat(strrep("=", 70), "\n\n")
@@ -118,8 +151,8 @@ summary.vefit <- function(object, digits = 4, ...) {
 #'
 #'
 #' @param object An object of class `vefit` created by [nomatchVE()] or [matching_ve()].
-#' @param confint_type Character string specifying the type of confidence interval bands to plot.
-#'   One of "wald", "percentile", "simul", or "none". Must choose a `confint_type` whose lower
+#' @param ci_type Character string specifying the type of confidence interval bands to plot.
+#'   One of "wald", "percentile", "simul", or "none". Must choose a `ci_type` whose lower
 #'   and upper bounds are already computed in `object$estimates` component of `object`.
 #' @param color Aesthetic value to map data values to. Default: `"#0072B2"` (blue)
 #'
@@ -130,13 +163,15 @@ summary.vefit <- function(object, digits = 4, ...) {
 #' facilitate comparison. The VE panel uses free y-axis scaling.
 #'
 #' @export
-plot.vefit <- function(object, confint_type = NULL, color = "#0072B2") {
+plot.vefit <- function(object, ci_type = NULL, color = "#0072B2") {
 
-    confint_type <- validate_confint_type(object, confint_type)
+    ci_type <- validate_confint_type(object, ci_type)
     plot_data <- estimates_to_df(object$estimates)
     plot_data$method <- "dummy"
     alpha <- object$alpha
-    plot_ve_panel(plot_data, confint_type, alpha, colors = color)
+    plot_ve_panel(plot_data, ci_type, alpha, colors = color,
+                  trt_0_label = paste(object$exposure, "= 0"),
+                  trt_1_label = paste(object$exposure, "= 1"))
 }
 
 #' Check if object is a vefit

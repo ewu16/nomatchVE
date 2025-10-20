@@ -16,10 +16,10 @@
 #'
 #' @param censor_time Time after exposure at which exposed
 #'   individuals are administratively censored during model fitting. Default:
-#'   `max(times)`. This limits estimation to the observed  period of interest and
+#'   `max(eval_times)`. This limits estimation to the observed  period of interest and
 #'   prevents extrapolation beyond the largest evaluation time.
 #'   Typically, users should leave this at the default.
-#' @param weighting Character string specifying how to construct marginalizing weights.
+#' @param weights_source Character string specifying how to construct marginalizing weights.
 #'   One of:
 #'   * `"observed"` (default): estimate weights from the observed data;
 #'   * `"custom"`: use user-specified weights provided via `custom_weights` argument;
@@ -32,34 +32,34 @@
 #' @param return_gp_list Logical; return marginalizing weights? Default is
 #'   TRUE.
 #' @param return_matching Logical; return matched datasets? Default is
-#'   TRUE if `weighting = "matched"`. When `weighting != "matched"`, this is
+#'   TRUE if `weights_source = "matched"`. When `weights_source != "matched"`, this is
 #'   automatically set to `FALSE`.
 #'
 ##' @return List with components:
 #' \describe{
 #'   \item{estimates}{List of matrices: `cuminc_0`, `cuminc_1`, `risk_ratio`, `vaccine_effectiveness`
 #'   where each matrix has one row per timepoint}
-#'   \item{model_0, model_1}{Fitted Cox models (if `return_models = TRUE`)}
+#'   \item{model_0, model_1}{Fitted Cox models (if `keep_models = TRUE`)}
 #'   \item{gp_list}{Marginalizing distributions (if `return_gp_list = TRUE`)}
-#'   \item{matched_data, matched_adata}{Matched datasets (if `weighting = "matched"`)}
+#'   \item{matched_data, matched_adata}{Matched datasets (if `weights_source = "matched"`)}
 #' }
 #'
 #' @keywords internal
 #' @export
 
 get_one_nomatch_ve <- function(data,
-                       outcome_name,
-                       event_name,
-                       trt_name,
-                       time_name,
-                       adjust_vars,
+                       outcome_time,
+                       outcome_status,
+                       exposure,
+                       exposure_time,
+                       covariates,
                        tau,
-                       times,
-                       censor_time = max(times),
-                       effect_measure = c("vaccine_effectiveness", "risk_ratio"),
-                       weighting = c("observed", "custom"),
+                       eval_times,
+                       censor_time = max(eval_times),
+                       effect = c("vaccine_effectiveness", "risk_ratio"),
+                       weights_source = c("observed", "custom"),
                        custom_weights = NULL,
-                       return_models = TRUE,
+                       keep_models = TRUE,
                        return_gp_list = TRUE){
 
     # --------------------------------------------------------------------------
@@ -67,38 +67,38 @@ get_one_nomatch_ve <- function(data,
     # --------------------------------------------------------------------------
 
     #Normalize user inputs
-    effect_measure <- match.arg(effect_measure)
-    weighting <- match.arg(weighting)
+    effect <- match.arg(effect)
+    weights_source <- match.arg(weights_source)
 
 
     # --------------------------------------------------------------------------
     # 1 - Fit survival models
     # --------------------------------------------------------------------------
-    fit_0 <- fit_model_0(data, outcome_name, event_name, trt_name, time_name,
-                         adjust_vars)
+    fit_0 <- fit_model_0(data, outcome_time, outcome_status, exposure, exposure_time,
+                         covariates)
 
     # Note: model_1 depends on censor time and tau (subset)
-    fit_1 <- fit_model_1(data, outcome_name, event_name, trt_name, time_name,
-                         adjust_vars, tau, censor_time)
+    fit_1 <- fit_model_1(data, outcome_time, outcome_status, exposure, exposure_time,
+                         covariates, tau, censor_time)
 
     # --------------------------------------------------------------------------
-    # 2 - Get/fit marginalizing distributions depending on weighting type
+    # 2 - Get/fit marginalizing distributions depending on weights_source type
     # --------------------------------------------------------------------------
-    if(identical(weighting, "observed")){
+    if(identical(weights_source, "observed")){
         gp_list <- get_observed_gp(data = data,
-                                   outcome_name = outcome_name,
-                                   trt_name = trt_name,
-                                   time_name = time_name,
-                                   adjust_vars = adjust_vars,
+                                   outcome_time = outcome_time,
+                                   exposure = exposure,
+                                   exposure_time = exposure_time,
+                                   covariates = covariates,
                                    tau = tau)
-    }else if(identical(weighting, "custom")){
+    }else if(identical(weights_source, "custom")){
         gp_list <- canonicalize_weights(custom_weights)
     }
 
     # --------------------------------------------------------------------------
     # 3 - Compute VE
     # --------------------------------------------------------------------------
-    cuminc <- compute_psi_bar_times(fit_0, fit_1, time_name, times, tau, gp_list$g_weights, gp_list = gp_list)
+    cuminc <- compute_psi_bar_times(fit_0, fit_1, exposure_time, eval_times, tau, gp_list$g_weights, gp_list = gp_list)
     rr <-  cuminc[, "cuminc_1"]/cuminc[, "cuminc_0"]
     ve <- 1 - rr
     estimates <- cbind(cuminc, "risk_ratio" = rr, "vaccine_effectiveness" = ve)
@@ -108,7 +108,7 @@ get_one_nomatch_ve <- function(data,
     # --------------------------------------------------------------------------
     out <- list(estimates = estimates)
 
-    if(return_models){
+    if(keep_models){
         out$model_0 <- fit_0
         out$model_1 <- fit_1
     }

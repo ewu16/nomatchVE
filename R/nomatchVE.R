@@ -10,74 +10,74 @@
 #'   summarized as risk ratios (RR) or 1 - RR (vaccine effectiveness).
 #'
 #'@param data A data frame with one row per individual containing the columns
-#'  named in `outcome_name`, `event_name`, `trt_name`, `time_name`, and any
-#'  variables listed in `adjust_vars`.
-#'@param outcome_name Name of the time-to-event/censoring variable. Time should
+#'  named in `outcome_time`, `outcome_status`, `exposure`, `exposure_time`, and any
+#'  variables listed in `covariates`.
+#'@param outcome_time Name of the time-to-event/censoring variable. Time should
 #'  be measured from a given time origin (e.g. study start, enrollment, or age)
 #'  for all individuals.
-#'@param event_name Name of the event indicator. The underlying column should be
+#'@param outcome_status Name of the event indicator. The underlying column should be
 #'  numeric (`1` = event, `0` = censored).
-#'@param trt_name Name of the exposure indicator. The underlying column should
+#'@param exposure Name of the exposure indicator. The underlying column should
 #'  be numeric (`1` = exposed during follow-up, `0` = never exposed during
 #'  follow-up).
-#'@param time_name Name of the time to exposure, measured from the chosen time
+#'@param exposure_time Name of the time to exposure, measured from the chosen time
 #'  origin; use `NA` if not exposed. Time must be measured in the same units
-#'  (e.g. days) as that used for  `outcome_name`.
-#'@param adjust_vars Character vector of covariates to adjust for when fitting
+#'  (e.g. days) as that used for  `outcome_time`.
+#'@param covariates Character vector of covariates to adjust for when fitting
 #'  the hazard models. These covariates should include all known confounders of
 #'  exposure and censoring measured at the chosen time origin.
 #'@param tau Non-negative numeric value specifying the time after exposure that
 #'  should be excluded from the risk evaluation period. This argument is
 #'  primarily intended for vaccination exposures, where it is common to exclude
 #'  the time after vaccination when immunity is still building. Time must be
-#'  measured in the same units as that used for `outcome_name` and `time_name`
+#'  measured in the same units as that used for `outcome_time` and `exposure_time`
 #'  and should reflect the biological understanding of when vaccine-induced
 #'  immunity develops (usually 1-2 weeks). For non-vaccine exposures, `tau` can
 #'  be set to 0 (no delay period).
-#'@param times Numeric vector specifying the timepoints at which to compute
+#'@param eval_times Numeric vector specifying the timepoints at which to compute
 #'  cumulative incidence and the derived effect measures. The timepoints should
 #'  be expressed in terms of time since exposure. All values must be greater
 #'  than `tau` and and should correspond to clinically meaningful follow-up
 #'  durations, such as 30, 60, or 90 days after exposure. A fine grid of
-#'  timepoints (e.g., `times = (tau+1):100`) can be provided if cumulative
+#'  timepoints (e.g., `eval_times = (tau+1):100`) can be provided if cumulative
 #'  incidence curves over time are desired.
-#'@param effect_measure Character. Type of effect measure to compute and return,
+#'@param effect Character. Type of effect measure to compute and return,
 #'  based on the estimated cumulative incidences. Either
 #'  `"vaccine_effectiveness"` (default) or `"risk_ratio"`.
-#'@param weighting Character string specifying the type of marginalizing weights
+#'@param weights_source Character string specifying the type of marginalizing weights
 #'  to use. Either:
 #'   - `"observed"` (default): set the marginalizing weights to the empirical
-#'  distribution of exposure times and covariates among the exposed. This
+#'  distribution of exposure eval_times and covariates among the exposed. This
 #'  provides close alignment with the weights implicitly used in matching.
 #'   - `"custom"`: use the user-specified weights provided in the `custom_weights` argument.
 #'@param custom_weights a `list(g_weights, p_weights)` providing weights for
 #'  marginalizing the time- and covariate-specific cumulative incidences. Must
 #'  have the following format:
 #'   - `g_weights`: data frame with columns
-#'      *  all variables in `adjust_vars`
-#'      * `time_name` (time of exposure),
+#'      *  all variables in `covariates`
+#'      * `exposure_time` (time of exposure),
 #'      * `prob` (probability of exposure at the given time within the covariate-group;
 #'      should sum to 1 within each covariate-group)
 #'   - `p_weights`: data frame with columns
-#'      *  all variables in `adjust_vars`
+#'      *  all variables in `covariates`
 #'      * `prob` (probability of covariate-group; should sum to 1 over all covariate groups.)
-#'@param confint_type Method for constructing bootstrap confidence intervals. One of
+#'@param ci_type Method for constructing bootstrap confidence intervals. One of
 #'  `"wald"`, `"percentile"`, or `"both"`.
 #'   - `"wald"` (default): Computes Wald-style intervals using bootstrap standard errors.
 #'   See **Confidence intervals** section for details.
 #'   - `"percentile"`: Computes percentile bootstrap intervals.
 #'   - `"both"`: Computes and returns both sets of intervals.
 #'
-#'@param n_boot Number of bootstrap replicates for confidence intervals.
+#'@param boot_reps Number of bootstrap replicates for confidence intervals.
 #'  Recommended to use at least 1000 for publication-quality results. Use
 #'  smaller values (e.g., 10-100) for initial exploration. Default: `0` (no
 #'  bootstrapping).
 #'@param alpha Significance level for confidence intervals (Confidence level =
 #'  100*(1-`alpha`)%). Default: `0.05`.
-#'@param return_models Logical; return the two fitted hazard models used to compute
+#'@param keep_models Logical; return the two fitted hazard models used to compute
 #' cumulative incidences?
 #'  Default: `TRUE`.
-#'@param return_boot Logical; return bootstrap samples? Default:
+#'@param keep_boot_samples Logical; return bootstrap samples? Default:
 #'  `TRUE`. Must be set to `TRUE` if user plans to use [add_simultaneous_ci()]
 #'  to obtain simultaneous confidence intervals.
 #'@param n_cores Integer; parallel cores for bootstrapping. Passed to
@@ -91,23 +91,23 @@
 #'   \describe{
 #'      \item{`cuminc_0`}{ marginal cumulative incidence under no exposure}
 #'      \item{`cuminc_1`}{ marginal cumulative incidence under exposure}
-#'      \item{`<effect_measure>`}{the selected effect measure under the same name}
+#'      \item{`<effect>`}{the selected effect measure under the same name}
 #'   }
-#'      Each matrix has one row per value in `times` and columns including the
+#'      Each matrix has one row per value in `eval_times` and columns including the
 #'     point estimate (`estimate`) and, when requested, confidence limits of the form
 #'     (`{wald/percentile}_lower`, `{wald/percentile}_upper`). }
 #'   \item{gp_list}{List with dataframes `g_weights`, `p_weights` specifying
-#'   the marginalizing weights used for averaging over exposure times and covariates.}
+#'   the marginalizing weights used for averaging over exposure eval_times and covariates.}
 #'   \item{model_0}{Fitted hazard model for the unexposed group.
 #'   See **Modeling** section for details.}
 #'   \item{model_1}{Fitted hazard model for the exposed group.
 #'   See **Modeling** section for details.}
 #'   \item{n_success_boot}{Integer vector indicating the
 #'   number of successful bootstrap replications per timepoint.}
-#'   \item{boot_samples}{(If `return_boot = TRUE`) List of bootstrap draws
+#'   \item{boot_samples}{(If `keep_boot_samples = TRUE`) List of bootstrap draws
 #'   (stored as matrices) for each
-#'   returned quantity with names mirroring those in `estimates` (i.e. `cuminc_0`, `cuminc_1`, `<effect_measure`).
-#'   Rows index bootstrap replicates and columns index `times`.}
+#'   returned quantity with names mirroring those in `estimates` (i.e. `cuminc_0`, `cuminc_1`, `<effect`).
+#'   Rows index bootstrap replicates and columns index `eval_times`.}
 #' }
 #'
 #' The `vefit` object has methods for [print()], [summary()], and [plot()].
@@ -130,8 +130,8 @@
 #' incidence estimates.
 #'
 #'
-#'**Marginalizing weights.** When `weighting = "observed"`, the marginalizing weights
-#'are the empirical distributions of exposure times and covariates among the
+#'**Marginalizing weights.** When `weights_source = "observed"`, the marginalizing weights
+#'are the empirical distributions of exposure eval_times and covariates among the
 #'exposed who remain at-risk `tau` days after exposure. These weights are
 #'returned in the `vefit` object under `gp_list`. They can also be obtained
 #'prior to the call to `nomatchVE()` by calling `get_observed_weights()`.
@@ -153,14 +153,14 @@
 #'
 #' fit <- nomatchVE(
 #'   data = simdata,
-#'   outcome_name = "Y",
-#'   event_name = "event",
-#'   trt_name = "V",
-#'   time_name = "D_obs",
-#'   adjust_vars = c("x1", "x2"),
-#'   times = seq(30, 180, by = 30),
+#'   outcome_time = "Y",
+#'   outcome_status = "event",
+#'   exposure = "V",
+#'   exposure_time = "D_obs",
+#'   covariates = c("x1", "x2"),
+#'   eval_times = seq(30, 180, by = 30),
 #'   tau = 14,
-#'   n_boot = 5,
+#'   boot_reps = 5,
 #'   n_cores = 2
 #' )
 #'
@@ -168,21 +168,21 @@
 #' fit$estimates
 
 nomatchVE <- function(data,
-                  outcome_name,
-                  event_name,
-                  trt_name,
-                  time_name,
-                  adjust_vars,
+                  outcome_time,
+                  outcome_status,
+                  exposure,
+                  exposure_time,
+                  covariates,
                   tau,
-                  times,
-                  effect_measure = c("vaccine_effectiveness", "risk_ratio"),
-                  weighting = c("observed", "custom"),
+                  eval_times,
+                  effect = c("vaccine_effectiveness", "risk_ratio"),
+                  weights_source = c("observed", "custom"),
                   custom_weights = NULL,
-                  confint_type = c("wald", "percentile", "both"),
-                  n_boot = 0,
+                  ci_type = c("wald", "percentile", "both"),
+                  boot_reps = 0,
                   alpha = 0.05,
-                  return_models = TRUE,
-                  return_boot = TRUE,
+                  keep_models = TRUE,
+                  keep_boot_samples = TRUE,
                   n_cores = 1
                   ){
 
@@ -193,30 +193,30 @@ nomatchVE <- function(data,
     # Normalize user choices
     call <- match.call()
 
-    effect_measure <- match.arg(effect_measure)
-    weighting      <- match.arg(weighting)
-    confint_type   <- match.arg(confint_type)
+    effect <- match.arg(effect)
+    weights_source      <- match.arg(weights_source)
+    ci_type   <- match.arg(ci_type)
 
     # Validate inputs
-    censor_time <- max(times)
+    censor_time <- max(eval_times)
 
     validate_ve_inputs(
         data = data,
-        outcome_name = outcome_name,
-        event_name = event_name,
-        trt_name = trt_name,
-        time_name = time_name,
-        adjust_vars = adjust_vars,
+        outcome_time = outcome_time,
+        outcome_status = outcome_status,
+        exposure = exposure,
+        exposure_time = exposure_time,
+        covariates = covariates,
         tau = tau,
-        times = times,
+        eval_times = eval_times,
         censor_time = censor_time
     )
 
-     if(identical(weighting, "custom") ){
+     if(identical(weights_source, "custom") ){
          validate_marginalizing_weights(
              custom_weights = custom_weights,
-             time_name      = time_name,
-             adjust_vars    = adjust_vars
+             exposure_time      = exposure_time,
+             covariates    = covariates
          )
      }
 
@@ -227,15 +227,15 @@ nomatchVE <- function(data,
      # --------------------------------------------------------------------------
 
      estimation_args <- list(data = data,
-                             outcome_name = outcome_name,
-                             event_name = event_name,
-                             trt_name = trt_name,
-                             time_name = time_name,
-                             adjust_vars = adjust_vars,
+                             outcome_time = outcome_time,
+                             outcome_status = outcome_status,
+                             exposure = exposure,
+                             exposure_time = exposure_time,
+                             covariates = covariates,
                              tau = tau,
-                             times = times,
+                             eval_times = eval_times,
                              censor_time = censor_time,
-                             weighting = weighting,
+                             weights_source = weights_source,
                              custom_weights = custom_weights
                             )
 
@@ -248,11 +248,11 @@ nomatchVE <- function(data,
      estimate_nomatch_ci_args <- c(estimation_args[!names(estimation_args) %in% c("custom_weights")] ,
                            list(pt_est = original$estimates,
                                 gp_list = original$gp_list,
-                                confint_type = confint_type,
+                                ci_type = ci_type,
                                 limit_type = "limit",
-                                n_boot = n_boot,
+                                boot_reps = boot_reps,
                                 alpha = alpha,
-                                return_boot = return_boot,
+                                keep_boot_samples = keep_boot_samples,
                                 n_cores = n_cores))
 
 
@@ -269,10 +269,10 @@ nomatchVE <- function(data,
      cuminc  <- list(cuminc_0 =  cbind(estimate = pt_est[, "cuminc_0"], ci_est[["cuminc_0"]]),
                      cuminc_1 = cbind(estimate = pt_est[, "cuminc_1"], ci_est[["cuminc_1"]]))
 
-     effect  <- setNames(list(cbind(estimate = pt_est[, effect_measure], ci_est[[effect_measure]])),
-                         effect_measure)
+     effect_measure  <- setNames(list(cbind(estimate = pt_est[, effect], ci_est[[effect]])),
+                         effect)
 
-     estimates <- c(cuminc, effect)
+     estimates <- c(cuminc, effect_measure)
      boot_inference$boot_samples <-  boot_inference$boot_samples[names(estimates)]
 
 
@@ -285,23 +285,23 @@ nomatchVE <- function(data,
          gp_list = original$gp_list,
          model_0 = original$model_0,
          model_1 = original$model_1,
-         outcome_name = outcome_name,
-         event_name = event_name,
-         trt_name = trt_name,
-         time_name = time_name,
-         adjust_vars = adjust_vars,
+         outcome_time = outcome_time,
+         outcome_status = outcome_status,
+         exposure = exposure,
+         exposure_time = exposure_time,
+         covariates = covariates,
          tau = tau,
-         times = times,
-         effect_measure = effect_measure,
-         confint_type = confint_type,
-         n_boot = n_boot,
+         eval_times = eval_times,
+         effect = effect,
+         ci_type = ci_type,
+         boot_reps = boot_reps,
          n_success_boot = boot_inference$n_success_boot,
          boot_error_inds = boot_inference$error_inds,
          boot_na_list =boot_inference$boot_na_list,
          alpha = alpha,
          call = call)
 
-    if(return_boot){
+    if(keep_boot_samples){
         out$boot_samples <- boot_inference$boot_samples
     }
 
