@@ -14,22 +14,20 @@
 #'
 #'   Typically output from [compute_psi_dx_t0()].
 #'
-#' @param gp_list A list of marginalizing weights with two components:
-#' \describe{
-#' \item{g_weights}{Data frame of covariate-conditional exposure-day probabilities \eqn{g(d \mid x)}.
-#'    Must include:
-#'    - `group_id`:covariate group identifier
-#'    - `<exposure_time>`: exposure time variable
-#'    - `prob_g`: probability of exposure time given the covariates
-#'     - all variables in `covariates`
-#'  }
-#' \item{p_weights}{Data frame of covariate probabilities \eqn{p(x)}.
-#'     Must include:
-#'     - `group_id`: covariate group identifier
-#'     - `prob_p`: marginal probability of each covariate group
-#'     - all variables in `covariates`
-#'  }
-#' }
+#' @param gp_list A list with two data frames:
+#'
+#' - **g_weights** Data frame of covariate-conditional exposure-day probabilities \eqn{g(d \mid x)}.
+#'   Must include:
+#'   - `group_id`: covariate group identifier
+#'   - `<exposure_time>`: exposure time variable
+#'   - `prob_g`: probability of exposure time given the covariates
+#'   - all variables in `covariates`
+#'
+#' -  **p_weights** Data frame of covariate probabilities \eqn{p(x)}.
+#'   Must include:
+#'   - `group_id`: covariate group identifier
+#'   - `prob_p`: marginal probability of each covariate group
+#'   - all variables in `covariates`
 #'
 #' Default is `NULL` in which case each row of `psi_dx` gets equal weight.
 #'

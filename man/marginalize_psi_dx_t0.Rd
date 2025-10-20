@@ -17,23 +17,21 @@ marginalize_psi_dx_t0(psi_dx, gp_list = NULL, show_intermediates = FALSE)
 
 Typically output from \code{\link[=compute_psi_dx_t0]{compute_psi_dx_t0()}}.}
 
-\item{gp_list}{A list of marginalizing weights with two components:
-\describe{
-\item{g_weights}{Data frame of covariate-conditional exposure-day probabilities \eqn{g(d \mid x)}.
+\item{gp_list}{A list with two data frames:
+\itemize{
+\item \strong{g_weights} Data frame of covariate-conditional exposure-day probabilities \eqn{g(d \mid x)}.
 Must include:
 \itemize{
-\item \code{group_id}:covariate group identifier
+\item \code{group_id}: covariate group identifier
 \item \verb{<exposure_time>}: exposure time variable
 \item \code{prob_g}: probability of exposure time given the covariates
-- all variables in \code{covariates}
+\item all variables in \code{covariates}
 }
-\item{p_weights}{Data frame of covariate probabilities \eqn{p(x)}.
+\item \strong{p_weights} Data frame of covariate probabilities \eqn{p(x)}.
 Must include:
-- \code{group_id}: covariate group identifier
-- \code{prob_p}: marginal probability of each covariate group
-- all variables in \code{covariates}
-}
-}
+\item \code{group_id}: covariate group identifier
+\item \code{prob_p}: marginal probability of each covariate group
+\item all variables in \code{covariates}
 }
 
 Default is \code{NULL} in which case each row of \code{psi_dx} gets equal weight.}
