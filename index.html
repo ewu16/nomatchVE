@@ -37,6 +37,7 @@
 <li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="search.json">
 </form></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/ewu16/nomatchVE/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul>
 </div>
 
@@ -51,20 +52,17 @@
 <blockquote>
 <p>A matching alternative for more efficiently evaluating vaccine effectiveness using observational data</p>
 </blockquote>
-<!-- badges: start -->
-<!-- badges: end -->
 <div class="section level2">
 <h2 id="description">Description<a class="anchor" aria-label="anchor" href="#description"></a>
 </h2>
-<p>The <code>nomatchVE</code> package uses a G-computation style estimator to compute vaccine efficacy from observational vaccine studies. The proposed estimator tends to produce similar point estimates as matching-based estimators but is more efficient.</p>
+<p>The <code>nomatchVE</code> package uses a G-computation style estimator to compute vaccine effectiveness from observational vaccine studies. The proposed estimator tends to produce similar point estimates as matching-based estimators but can be more efficient.</p>
 </div>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
-<p>You can install the development version of <code>nomatchVE</code> like so:</p>
+<p>You can install the development version of <code>nomatchVE</code> with:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># TODO: not yet available on Github </span></span>
-<span><span class="co"># install.packages("devtools")</span></span>
+<code class="sourceCode R"><span><span class="co"># install.packages("devtools")</span></span>
 <span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"ewu16/nomatchVE"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
@@ -72,11 +70,9 @@
 </h2>
 <p>This minimal example shows how to use <code>nomatchVE</code> to obtain cumulative incidence and vaccine effectiveness estimates in a simple simulated data set.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ewu16.github.io/nomatchVE/">nomatchVE</a></span><span class="op">)</span></span>
-<span><span class="co"># Set seed for reproducibility </span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1234</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="co">#Load package</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ewu16.github.io/nomatchVE/">nomatchVE</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># ------------------------------------------------------------------------------</span></span>
 <span><span class="co"># Example data</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">simdata</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   ID x1 x2 V D_obs   Y event</span></span>
@@ -102,205 +98,166 @@
 <span><span class="co">#&gt;  Mean   : 25.78   Mean   :178   Mean   :0.1007  </span></span>
 <span><span class="co">#&gt;  3rd Qu.: 32.00   3rd Qu.:210   3rd Qu.:0.0000  </span></span>
 <span><span class="co">#&gt;  Max.   :206.00   Max.   :210   Max.   :1.0000  </span></span>
-<span><span class="co">#&gt;  NA's   :5888</span></span>
-<span></span>
-<span><span class="co"># ------------------------------------------------------------------------------</span></span>
-<span><span class="co"># 1. Set input parameters</span></span>
-<span><span class="va">outcome_name</span> <span class="op">&lt;-</span> <span class="st">"Y"</span></span>
-<span><span class="va">event_name</span> <span class="op">&lt;-</span> <span class="st">"event"</span></span>
-<span><span class="va">trt_name</span> <span class="op">&lt;-</span> <span class="st">"V"</span></span>
-<span><span class="va">time_name</span> <span class="op">&lt;-</span> <span class="st">"D_obs"</span></span>
-<span><span class="va">adjust_vars</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"x1"</span>, <span class="st">"x2"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">times</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">30</span>, <span class="fl">180</span>, by <span class="op">=</span> <span class="fl">30</span><span class="op">)</span></span>
-<span><span class="va">censor_time</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">times</span><span class="op">)</span></span>
-<span><span class="va">tau</span> <span class="op">&lt;-</span> <span class="fl">14</span></span>
-<span><span class="va">ci_type</span> <span class="op">&lt;-</span> <span class="st">"wald"</span></span>
-<span><span class="va">n_boot</span> <span class="op">&lt;-</span> <span class="fl">10</span></span>
-<span><span class="va">alpha</span> <span class="op">&lt;-</span> <span class="fl">.05</span></span>
-<span></span>
-<span><span class="co"># ------------------------------------------------------------------------------</span></span>
-<span><span class="co"># 2. Compute VE estimand at time points </span></span>
-<span></span>
-<span><span class="va">fit1</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/nomatchVE.html">nomatchVE</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">simdata</span>,</span>
-<span>              outcome_name <span class="op">=</span> <span class="va">outcome_name</span>,</span>
-<span>              event_name <span class="op">=</span> <span class="va">event_name</span>,</span>
-<span>              trt_name <span class="op">=</span> <span class="va">trt_name</span>,</span>
-<span>              time_name <span class="op">=</span> <span class="va">time_name</span>, </span>
-<span>              adjust_vars <span class="op">=</span> <span class="va">adjust_vars</span>,</span>
-<span>              times <span class="op">=</span> <span class="va">times</span>,</span>
-<span>              censor_time <span class="op">=</span> <span class="va">censor_time</span>, </span>
-<span>              tau <span class="op">=</span> <span class="va">tau</span>,</span>
-<span>              ci_type <span class="op">=</span> <span class="va">ci_type</span>,</span>
-<span>              n_boot <span class="op">=</span> <span class="va">n_boot</span>, </span>
-<span>              alpha <span class="op">=</span> <span class="va">alpha</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Bootstrapping...</span></span>
-<span><span class="co">#&gt; Time difference of 1.168066 secs</span></span>
-<span>             </span>
-<span><span class="va">fit1</span><span class="op">$</span><span class="va">estimates</span></span>
-<span><span class="co">#&gt; $risk_0</span></span>
-<span><span class="co">#&gt;       estimate  wald_lower wald_upper    wald_sd wald_n     boot_sd</span></span>
-<span><span class="co">#&gt; 30  0.01163891 0.009421632 0.01437044 0.10897478     10 0.001223885</span></span>
-<span><span class="co">#&gt; 60  0.03790915 0.032977413 0.04354521 0.07371694     10 0.002621353</span></span>
-<span><span class="co">#&gt; 90  0.05857293 0.051107595 0.06705168 0.07359223     10 0.004046512</span></span>
-<span><span class="co">#&gt; 120 0.06691947 0.058551925 0.07638578 0.07270729     10 0.004563564</span></span>
-<span><span class="co">#&gt; 150 0.07548793 0.067354759 0.08451420 0.06263278     10 0.004406041</span></span>
-<span><span class="co">#&gt; 180 0.09576440 0.087057130 0.10524216 0.05352640     10 0.004684788</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $risk_1</span></span>
-<span><span class="co">#&gt;        estimate wald_lower  wald_upper    wald_sd wald_n     boot_sd</span></span>
-<span><span class="co">#&gt; 30  0.006219935 0.00419231 0.009219148 0.20232299     10 0.001340445</span></span>
-<span><span class="co">#&gt; 60  0.022925618 0.01939429 0.027082177 0.08718734     10 0.002060689</span></span>
-<span><span class="co">#&gt; 90  0.035346676 0.03121058 0.040008256 0.06567753     10 0.002292971</span></span>
-<span><span class="co">#&gt; 120 0.044244807 0.04022530 0.048645599 0.05073486     10 0.002232851</span></span>
-<span><span class="co">#&gt; 150 0.055146409 0.04860045 0.062516101 0.06799253     10 0.003623622</span></span>
-<span><span class="co">#&gt; 180 0.079293545 0.07283785 0.086268172 0.04689277     10 0.003508187</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $ve</span></span>
-<span><span class="co">#&gt;      estimate wald_lower wald_upper    wald_sd wald_n    boot_sd</span></span>
-<span><span class="co">#&gt; 30  0.4655914 0.09017978  0.6861000 0.27147761     10 0.16959167</span></span>
-<span><span class="co">#&gt; 60  0.3952484 0.23590116  0.5213649 0.11932839     10 0.07678447</span></span>
-<span><span class="co">#&gt; 90  0.3965357 0.25939031  0.5082846 0.10448500     10 0.06355249</span></span>
-<span><span class="co">#&gt; 120 0.3388351 0.20113506  0.4527998 0.09652655     10 0.06539091</span></span>
-<span><span class="co">#&gt; 150 0.2694672 0.13871445  0.3803702 0.08400764     10 0.06150869</span></span>
-<span><span class="co">#&gt; 180 0.1719935 0.04444629  0.2825158 0.07309828     10 0.06043334</span></span>
-<span></span>
-<span><span class="co">#Plot pointwise intervals </span></span>
-<span><span class="fu"><a href="reference/plot_ve_panel.html">plot_ve_panel</a></span><span class="op">(</span><span class="va">fit1</span> , ci_type <span class="op">=</span> <span class="st">"wald"</span><span class="op">)</span> </span></code></pre></div>
-<p><img src="reference/figures/README-example-1.png" width="100%"></p>
+<span><span class="co">#&gt;  NA's   :5888</span></span></code></pre></div>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
-<span><span class="co">#Compute simultaneous CI</span></span>
-<span><span class="va">simul_ci</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/simultaneous_ci.html">simultaneous_ci</a></span><span class="op">(</span><span class="va">fit1</span>, <span class="va">alpha</span>, seed <span class="op">=</span> <span class="fl">1234</span><span class="op">)</span></span>
-<span><span class="va">simul_ci</span><span class="op">$</span><span class="va">estimates</span></span>
-<span><span class="co">#&gt; $risk_0</span></span>
-<span><span class="co">#&gt;       estimate simul_lower simul_upper simul_n</span></span>
-<span><span class="co">#&gt; 30  0.01163891 0.009154859  0.01478692      10</span></span>
-<span><span class="co">#&gt; 60  0.03790915 0.032357671  0.04436940      10</span></span>
-<span><span class="co">#&gt; 90  0.05857293 0.050166391  0.06828691      10</span></span>
-<span><span class="co">#&gt; 120 0.06691947 0.057494687  0.07776174      10</span></span>
-<span><span class="co">#&gt; 150 0.07548793 0.066315508  0.08581243      10</span></span>
-<span><span class="co">#&gt; 180 0.09576440 0.085931940  0.10659071      10</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $risk_1</span></span>
-<span><span class="co">#&gt;        estimate simul_lower simul_upper simul_n</span></span>
-<span><span class="co">#&gt; 30  0.006219935  0.00376434  0.01026089      10</span></span>
-<span><span class="co">#&gt; 60  0.022925618  0.01852783  0.02833712      10</span></span>
-<span><span class="co">#&gt; 90  0.035346676  0.03016674  0.04137811      10</span></span>
-<span><span class="co">#&gt; 120 0.044244807  0.03919162  0.04991567      10</span></span>
-<span><span class="co">#&gt; 150 0.055146409  0.04694784  0.06467954      10</span></span>
-<span><span class="co">#&gt; 180 0.079293545  0.07116372  0.08826387      10</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $ve</span></span>
-<span><span class="co">#&gt;      estimate simul_lower simul_upper simul_n</span></span>
-<span><span class="co">#&gt; 30  0.4655914 -0.01193416   0.7177756      10</span></span>
-<span><span class="co">#&gt; 60  0.3952484  0.19932669   0.5432288      10</span></span>
-<span><span class="co">#&gt; 90  0.3965357  0.22844064   0.5280088      10</span></span>
-<span><span class="co">#&gt; 120 0.3388351  0.17034211   0.4731092      10</span></span>
-<span><span class="co">#&gt; 150 0.2694672  0.10989235   0.4004341      10</span></span>
-<span><span class="co">#&gt; 180 0.1719935  0.01668185   0.3027743      10</span></span>
+<span><span class="co"># Compute cumulative incidence </span></span>
+<span><span class="va">fit1</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/nomatchVE.html">nomatchVE</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">simdata</span>,</span>
+<span>                  outcome_time <span class="op">=</span> <span class="st">"Y"</span>,</span>
+<span>                  outcome_status <span class="op">=</span> <span class="st">"event"</span>,</span>
+<span>                  exposure <span class="op">=</span> <span class="st">"V"</span>,</span>
+<span>                  exposure_time <span class="op">=</span> <span class="st">"D_obs"</span>, </span>
+<span>                  covariates <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"x1"</span>, <span class="st">"x2"</span><span class="op">)</span>,</span>
+<span>                  tau <span class="op">=</span> <span class="fl">14</span>,</span>
+<span>                  eval_times <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">30</span>, <span class="fl">180</span>, by <span class="op">=</span> <span class="fl">30</span><span class="op">)</span>,</span>
+<span>                  boot_reps <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Bootstrapping 10 samples...</span></span>
+<span><span class="co">#&gt; Time difference of 1.496422 secs</span></span>
 <span></span>
-<span><span class="co">#Plot simultaneous confidence bands </span></span>
-<span><span class="fu"><a href="reference/plot_ve_panel.html">plot_ve_panel</a></span><span class="op">(</span><span class="va">simul_ci</span> , ci_type <span class="op">=</span> <span class="st">"simul"</span><span class="op">)</span> </span></code></pre></div>
-<p><img src="reference/figures/README-example-2.png" width="100%"></p>
+<span><span class="co">#Print results </span></span>
+<span><span class="va">fit1</span>        </span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;  Vaccine Effectiveness Estimates </span></span>
+<span><span class="co">#&gt; ================================================== </span></span>
+<span><span class="co">#&gt; Call: nomatchVE(data = simdata, outcome_time = "Y", outcome_status = "event", </span></span>
+<span><span class="co">#&gt;     exposure = "V", exposure_time = "D_obs", covariates = c("x1", </span></span>
+<span><span class="co">#&gt;         "x2"), tau = 14, eval_times = seq(30, 180, by = 30), </span></span>
+<span><span class="co">#&gt;     boot_reps = 10) </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Result:</span></span>
+<span><span class="co">#&gt;   Timepoint Estimate 95% Wald CI: Lower 95% Wald CI: Upper</span></span>
+<span><span class="co">#&gt; 1        30   0.4655             0.0899             0.6860</span></span>
+<span><span class="co">#&gt; 2        60   0.3952             0.2359             0.5212</span></span>
+<span><span class="co">#&gt; 3        90   0.3972             0.2599             0.5090</span></span>
+<span><span class="co">#&gt; 4       120   0.3395             0.2012             0.4538</span></span>
+<span><span class="co">#&gt; 5       150   0.2698             0.1387             0.3809</span></span>
+<span><span class="co">#&gt; 6       180  -0.0359            -0.1923             0.0999</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Use summary() for more details</span></span>
+<span><span class="co">#&gt; Use plot() to visualize results</span></span>
+<span></span>
+<span><span class="co">#Summary </span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit1</span><span class="op">)</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; ====================================================================== </span></span>
+<span><span class="co">#&gt; Vaccine Effectiveness Analysis Summary</span></span>
+<span><span class="co">#&gt; ====================================================================== </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Method:              nomatchVE (G-computation) </span></span>
+<span><span class="co">#&gt; Evaluation eval_times:    30, 60, 90, 120, 150, 180 </span></span>
+<span><span class="co">#&gt; Tau (delay period):  14 </span></span>
+<span><span class="co">#&gt; Adjusted for:        x1, x2 </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Bootstrap:           10 replicates</span></span>
+<span><span class="co">#&gt; Confidence level:    95 %</span></span>
+<span><span class="co">#&gt; Successful samples:  10-10  (range across timepoints)</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; ---------------------------------------------------------------------- </span></span>
+<span><span class="co">#&gt; Vaccine Effectiveness </span></span>
+<span><span class="co">#&gt; ---------------------------------------------------------------------- </span></span>
+<span><span class="co">#&gt;     estimate wald_lower wald_upper wald_n</span></span>
+<span><span class="co">#&gt; 30    0.4655     0.0899     0.6860     10</span></span>
+<span><span class="co">#&gt; 60    0.3952     0.2359     0.5212     10</span></span>
+<span><span class="co">#&gt; 90    0.3972     0.2599     0.5090     10</span></span>
+<span><span class="co">#&gt; 120   0.3395     0.2012     0.4538     10</span></span>
+<span><span class="co">#&gt; 150   0.2698     0.1387     0.3809     10</span></span>
+<span><span class="co">#&gt; 180  -0.0359    -0.1923     0.0999     10</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; ======================================================================</span></span>
+<span></span>
+<span><span class="co">#Plot pointwise intervals </span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit1</span><span class="op">)</span> </span></code></pre></div>
+<p><img src="reference/figures/README-unnamed-chunk-3-1.png" width="100%"></p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
-<span> </span>
+<span><span class="co">#Compute simultaneous CI</span></span>
+<span><span class="va">fit1_with_simul</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/add_simultaneous_ci.html">add_simultaneous_ci</a></span><span class="op">(</span><span class="va">fit1</span>, seed <span class="op">=</span> <span class="fl">1234</span><span class="op">)</span></span>
 <span></span>
-<span></span>
-<span><span class="co"># ------------------------------------------------------------------------------</span></span>
+<span><span class="co">#Plot simultaneous confidence bands </span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit1_with_simul</span> , ci_type <span class="op">=</span> <span class="st">"simul"</span><span class="op">)</span> </span></code></pre></div>
+<p><img src="reference/figures/README-unnamed-chunk-3-2.png" width="100%"></p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># ------------------------------------------------------------------------------</span></span>
 <span><span class="co"># 3. Compare results with matching estimator</span></span>
 <span></span>
-<span><span class="va">id_name</span> <span class="op">&lt;-</span> <span class="st">"ID"</span></span>
-<span><span class="va">matching_vars</span> <span class="op">&lt;-</span> <span class="va">adjust_vars</span></span>
+<span></span>
 <span></span>
 <span><span class="va">matched_cohort</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/match_rolling_cohort.html">match_rolling_cohort</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">simdata</span>,</span>
-<span>                                       outcome_name <span class="op">=</span> <span class="va">outcome_name</span>,</span>
-<span>                                       trt_name <span class="op">=</span> <span class="va">trt_name</span>,</span>
-<span>                                       time_name <span class="op">=</span> <span class="va">time_name</span>,</span>
-<span>                                       id_name <span class="op">=</span> <span class="va">id_name</span>,</span>
-<span>                                       matching_vars <span class="op">=</span> <span class="va">adjust_vars</span>,</span>
-<span>                                       replace <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>                                       outcome_time <span class="op">=</span> <span class="st">"Y"</span>,</span>
+<span>                                       exposure <span class="op">=</span> <span class="st">"V"</span>,</span>
+<span>                                       exposure_time <span class="op">=</span> <span class="st">"D_obs"</span>, </span>
+<span>                                       matching_vars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"x1"</span>, <span class="st">"x2"</span><span class="op">)</span>,</span>
+<span>                                       id_name <span class="op">=</span> <span class="st">"ID"</span>,</span>
 <span>                                       seed <span class="op">=</span> <span class="fl">5678</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">matched_data</span> <span class="op">&lt;-</span> <span class="va">matched_cohort</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span></span>
 <span></span>
 <span></span>
 <span><span class="va">fit_matching</span> <span class="op">&lt;-</span><span class="fu"><a href="reference/matching_ve.html">matching_ve</a></span><span class="op">(</span>matched_data <span class="op">=</span> <span class="va">matched_data</span>,</span>
-<span>                           outcome_name <span class="op">=</span> <span class="va">outcome_name</span>,</span>
-<span>                           event_name <span class="op">=</span> <span class="va">event_name</span>,</span>
-<span>                           trt_name <span class="op">=</span> <span class="va">trt_name</span>,</span>
-<span>                           time_name <span class="op">=</span> <span class="va">time_name</span>,</span>
-<span>                           method <span class="op">=</span> <span class="st">"km"</span>,</span>
-<span>                           times <span class="op">=</span> <span class="va">times</span>,</span>
-<span>                           censor_time <span class="op">=</span> <span class="va">censor_time</span>,</span>
-<span>                           tau <span class="op">=</span> <span class="va">tau</span>,</span>
-<span>                           ci_type <span class="op">=</span> <span class="va">ci_type</span>,</span>
-<span>                           n_boot <span class="op">=</span> <span class="va">n_boot</span>,</span>
-<span>                           alpha <span class="op">=</span> <span class="va">alpha</span><span class="op">)</span> </span>
-<span><span class="co">#&gt; Bootstrapping...</span></span>
-<span><span class="co">#&gt; Time difference of 0.7695818 secs</span></span>
-<span>   </span>
+<span>                           outcome_time <span class="op">=</span> <span class="st">"Y"</span>,</span>
+<span>                           outcome_status <span class="op">=</span> <span class="st">"event"</span>,</span>
+<span>                           exposure <span class="op">=</span> <span class="st">"V"</span>,</span>
+<span>                           exposure_time <span class="op">=</span> <span class="st">"D_obs"</span>, </span>
+<span>                           tau <span class="op">=</span> <span class="fl">14</span>,</span>
+<span>                           eval_times <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">30</span>, <span class="fl">180</span>, by <span class="op">=</span> <span class="fl">30</span><span class="op">)</span>,</span>
+<span>                           boot_reps <span class="op">=</span> <span class="fl">10</span><span class="op">)</span> </span>
+<span><span class="co">#&gt; Bootstrapping 10 samples...</span></span>
+<span><span class="co">#&gt; Time difference of 0.7517531 secs</span></span>
 <span></span>
-<span><span class="co">## Proposed and matching based estimators have similar point estimates</span></span>
-<span><span class="co">##  Proposed has narrower confidence intervals </span></span>
-<span><span class="va">fit1</span><span class="op">$</span><span class="va">estimates</span></span>
-<span><span class="co">#&gt; $risk_0</span></span>
-<span><span class="co">#&gt;       estimate  wald_lower wald_upper    wald_sd wald_n     boot_sd</span></span>
-<span><span class="co">#&gt; 30  0.01163891 0.009421632 0.01437044 0.10897478     10 0.001223885</span></span>
-<span><span class="co">#&gt; 60  0.03790915 0.032977413 0.04354521 0.07371694     10 0.002621353</span></span>
-<span><span class="co">#&gt; 90  0.05857293 0.051107595 0.06705168 0.07359223     10 0.004046512</span></span>
-<span><span class="co">#&gt; 120 0.06691947 0.058551925 0.07638578 0.07270729     10 0.004563564</span></span>
-<span><span class="co">#&gt; 150 0.07548793 0.067354759 0.08451420 0.06263278     10 0.004406041</span></span>
-<span><span class="co">#&gt; 180 0.09576440 0.087057130 0.10524216 0.05352640     10 0.004684788</span></span>
+<span><span class="va">fit_matching</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $risk_1</span></span>
-<span><span class="co">#&gt;        estimate wald_lower  wald_upper    wald_sd wald_n     boot_sd</span></span>
-<span><span class="co">#&gt; 30  0.006219935 0.00419231 0.009219148 0.20232299     10 0.001340445</span></span>
-<span><span class="co">#&gt; 60  0.022925618 0.01939429 0.027082177 0.08718734     10 0.002060689</span></span>
-<span><span class="co">#&gt; 90  0.035346676 0.03121058 0.040008256 0.06567753     10 0.002292971</span></span>
-<span><span class="co">#&gt; 120 0.044244807 0.04022530 0.048645599 0.05073486     10 0.002232851</span></span>
-<span><span class="co">#&gt; 150 0.055146409 0.04860045 0.062516101 0.06799253     10 0.003623622</span></span>
-<span><span class="co">#&gt; 180 0.079293545 0.07283785 0.086268172 0.04689277     10 0.003508187</span></span>
+<span><span class="co">#&gt;  Vaccine Effectiveness Estimates </span></span>
+<span><span class="co">#&gt; ================================================== </span></span>
+<span><span class="co">#&gt; Call: matching_ve(matched_data = matched_data, outcome_time = "Y", </span></span>
+<span><span class="co">#&gt;     outcome_status = "event", exposure = "V", exposure_time = "D_obs", </span></span>
+<span><span class="co">#&gt;     tau = 14, eval_times = seq(30, 180, by = 30), boot_reps = 10) </span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $ve</span></span>
-<span><span class="co">#&gt;      estimate wald_lower wald_upper    wald_sd wald_n    boot_sd</span></span>
-<span><span class="co">#&gt; 30  0.4655914 0.09017978  0.6861000 0.27147761     10 0.16959167</span></span>
-<span><span class="co">#&gt; 60  0.3952484 0.23590116  0.5213649 0.11932839     10 0.07678447</span></span>
-<span><span class="co">#&gt; 90  0.3965357 0.25939031  0.5082846 0.10448500     10 0.06355249</span></span>
-<span><span class="co">#&gt; 120 0.3388351 0.20113506  0.4527998 0.09652655     10 0.06539091</span></span>
-<span><span class="co">#&gt; 150 0.2694672 0.13871445  0.3803702 0.08400764     10 0.06150869</span></span>
-<span><span class="co">#&gt; 180 0.1719935 0.04444629  0.2825158 0.07309828     10 0.06043334</span></span>
-<span><span class="va">fit_matching</span><span class="op">$</span><span class="va">estimates</span></span>
-<span><span class="co">#&gt; $risk_0</span></span>
-<span><span class="co">#&gt;       estimate wald_lower wald_upper    wald_sd wald_n     boot_sd</span></span>
-<span><span class="co">#&gt; 30  0.01086261 0.00816117 0.01444522 0.14728132     10 0.001502621</span></span>
-<span><span class="co">#&gt; 60  0.04053224 0.03354123 0.04890665 0.10029884     10 0.003894920</span></span>
-<span><span class="co">#&gt; 90  0.05649740 0.04659370 0.06835525 0.10366076     10 0.005442758</span></span>
-<span><span class="co">#&gt; 120 0.06531227 0.05485152 0.07760418 0.09473619     10 0.005819909</span></span>
-<span><span class="co">#&gt; 150 0.07506208 0.06538236 0.08604294 0.07575337     10 0.005310378</span></span>
-<span><span class="co">#&gt; 180 0.09806838 0.08849193 0.10855774 0.05781499     10 0.005218119</span></span>
+<span><span class="co">#&gt; Result:</span></span>
+<span><span class="co">#&gt;   Timepoint Estimate 95% Wald CI: Lower 95% Wald CI: Upper</span></span>
+<span><span class="co">#&gt; 1        30    0.503            -0.1366              0.782</span></span>
+<span><span class="co">#&gt; 2        60    0.483             0.2854              0.626</span></span>
+<span><span class="co">#&gt; 3        90    0.389             0.0954              0.587</span></span>
+<span><span class="co">#&gt; 4       120    0.329             0.0963              0.501</span></span>
+<span><span class="co">#&gt; 5       150    0.290             0.1163              0.429</span></span>
+<span><span class="co">#&gt; 6       180    0.225             0.0245              0.384</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $risk_1</span></span>
-<span><span class="co">#&gt;        estimate  wald_lower wald_upper    wald_sd wald_n     boot_sd</span></span>
-<span><span class="co">#&gt; 30  0.005403358 0.002906644 0.01002311 0.31762240     10 0.001361844</span></span>
-<span><span class="co">#&gt; 60  0.020951417 0.017859597 0.02456510 0.08307207     10 0.001668270</span></span>
-<span><span class="co">#&gt; 90  0.034537618 0.027318416 0.04357910 0.12343988     10 0.003876624</span></span>
-<span><span class="co">#&gt; 120 0.043854554 0.037473074 0.05126489 0.08362803     10 0.003333112</span></span>
-<span><span class="co">#&gt; 150 0.053307254 0.048019169 0.05914151 0.05614514     10 0.002763259</span></span>
-<span><span class="co">#&gt; 180 0.076044073 0.065802745 0.08772965 0.07942736     10 0.005423460</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $ve</span></span>
-<span><span class="co">#&gt;      estimate  wald_lower wald_upper   wald_sd wald_n    boot_sd</span></span>
-<span><span class="co">#&gt; 30  0.5025726 -0.13657853  0.7822992 0.4216037     10 0.19438046</span></span>
-<span><span class="co">#&gt; 60  0.4830925  0.28538578  0.6261013 0.1652474     10 0.08775569</span></span>
-<span><span class="co">#&gt; 90  0.3886866  0.09536997  0.5868984 0.1999609     10 0.12080363</span></span>
-<span><span class="co">#&gt; 120 0.3285403  0.09629202  0.5011020 0.1515601     10 0.09715542</span></span>
-<span><span class="co">#&gt; 150 0.2898245  0.11634727  0.4292449 0.1115082     10 0.07586956</span></span>
-<span><span class="co">#&gt; 180 0.2245811  0.02449580  0.3836270 0.1171200     10 0.08576272</span></span></code></pre></div>
+<span><span class="co">#&gt; Use summary() for more details</span></span>
+<span><span class="co">#&gt; Use plot() to visualize results</span></span>
+<span></span>
+<span><span class="co">## Plot matching vs proposed estimator - nomatch tends to have similar point estimates but narrower</span></span>
+<span><span class="co"># confidence intervals</span></span>
+<span><span class="fu"><a href="reference/compare_ve_fits.html">compare_ve_fits</a></span><span class="op">(</span><span class="va">fit_matching</span>, <span class="va">fit1</span>, labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Matching"</span>, <span class="st">"nomatch (G-computation)"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p><img src="reference/figures/README-unnamed-chunk-4-1.png" width="100%"></p>
+</div>
+<div class="section level2">
+<h2 id="issues">Issues<a class="anchor" aria-label="anchor" href="#issues"></a>
+</h2>
+<p>If you encounter any bugs or have any specific feature requests, please <a href="https://github.com/ewu16/nomatchVE/issues" class="external-link">file an issue</a>.</p>
+</div>
+<div class="section level2">
+<h2 id="citation">Citation<a class="anchor" aria-label="anchor" href="#citation"></a>
+</h2>
+<p>If you use the <code>nomatchVE</code> package in your work, please cite the following:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a> <span class="sc">@</span>Manual{,</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>   title <span class="ot">=</span> {nomatchVE<span class="sc">:</span> Estimate Causal Vaccine Effectiveness <span class="cf">in</span> Observational Studies</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>             Without Matching},</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>   author <span class="ot">=</span> {Emily Wu},</span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>   year <span class="ot">=</span> {<span class="dv">2025</span>},</span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>   note <span class="ot">=</span> {R package version <span class="dv">0</span>.<span class="dv">0</span>.<span class="fl">0.9000</span>, </span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a>   https<span class="sc">:</span><span class="er">//</span>github.com<span class="sc">/</span>ewu16<span class="sc">/</span>nomatchVE},</span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a>   url <span class="ot">=</span> {https<span class="sc">:</span><span class="er">//</span>ewu16.github.io<span class="sc">/</span>nomatchVE<span class="sc">/</span>},</span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a> }</span></code></pre></div>
 </div>
 </div>
-  </main><aside class="col-md-3"><div class="license">
+  </main><aside class="col-md-3"><div class="links">
+<h2 data-toc-skip>Links</h2>
+<ul class="list-unstyled">
+<li><a href="https://github.com/ewu16/nomatchVE/" class="external-link">Browse source code</a></li>
+<li><a href="https://github.com/ewu16/nomatchVE/issues" class="external-link">Report a bug</a></li>
+</ul>
+</div>
+
+<div class="license">
 <h2 data-toc-skip>License</h2>
 <ul class="list-unstyled">
 <li><a href="LICENSE.html">Full license</a></li>
@@ -319,7 +276,7 @@
 <div class="developers">
 <h2 data-toc-skip>Developers</h2>
 <ul class="list-unstyled">
-<li>Emily Wu <br><small class="roles"> Author, maintainer </small> <a href="https://orcid.org/YOUR-ORCID-ID" target="orcid.widget" aria-label="ORCID" class="external-link"><span class="fab fa-orcid orcid" aria-hidden="true"></span></a> </li>
+<li>Emily Wu <br><small class="roles"> Author, maintainer </small> <a href="https://orcid.org/0009-0003-5487-6753" target="orcid.widget" aria-label="ORCID" class="external-link"><span class="fab fa-orcid orcid" aria-hidden="true"></span></a>  </li>
 </ul>
 </div>
 
@@ -334,7 +291,7 @@
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
 </div>
 
     </footer>

@@ -34,6 +34,7 @@ index date
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/ewu16/nomatchVE/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul></div>
 
 
@@ -43,7 +44,7 @@ index date
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Get analysis matched dataset from matched cohort</h1>
-
+      <small class="dont-index">Source: <a href="https://github.com/ewu16/nomatchVE/blob/main/R/get_matched_adata.R" class="external-link"><code>R/get_matched_adata.R</code></a></small>
       <div class="d-none name"><code>clean_matched_data.Rd</code></div>
     </div>
 
@@ -60,12 +61,11 @@ index date</p></li>
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">clean_matched_data</span><span class="op">(</span></span>
 <span>  <span class="va">matched_data</span>,</span>
-<span>  <span class="va">outcome_name</span>,</span>
-<span>  <span class="va">event_name</span>,</span>
-<span>  <span class="va">trt_name</span>,</span>
-<span>  <span class="va">time_name</span>,</span>
-<span>  <span class="va">tau</span>,</span>
-<span>  pair_censoring <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  <span class="va">outcome_time</span>,</span>
+<span>  <span class="va">outcome_status</span>,</span>
+<span>  <span class="va">exposure</span>,</span>
+<span>  <span class="va">exposure_time</span>,</span>
+<span>  <span class="va">tau</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -77,19 +77,19 @@ index date</p></li>
 <dd><p>A data frame representing a matched cohort</p></dd>
 
 
-<dt id="arg-outcome-name">outcome_name<a class="anchor" aria-label="anchor" href="#arg-outcome-name"></a></dt>
+<dt id="arg-outcome-time">outcome_time<a class="anchor" aria-label="anchor" href="#arg-outcome-time"></a></dt>
 <dd><p>Character string representing the original outcome variable in  <code>matched_data</code></p></dd>
 
 
-<dt id="arg-event-name">event_name<a class="anchor" aria-label="anchor" href="#arg-event-name"></a></dt>
+<dt id="arg-outcome-status">outcome_status<a class="anchor" aria-label="anchor" href="#arg-outcome-status"></a></dt>
 <dd><p>Character string representing the original event variable in <code>matched_data</code></p></dd>
 
 
-<dt id="arg-trt-name">trt_name<a class="anchor" aria-label="anchor" href="#arg-trt-name"></a></dt>
+<dt id="arg-exposure">exposure<a class="anchor" aria-label="anchor" href="#arg-exposure"></a></dt>
 <dd><p>Character string representing the original vaccination status variable in <code>matched_data</code></p></dd>
 
 
-<dt id="arg-time-name">time_name<a class="anchor" aria-label="anchor" href="#arg-time-name"></a></dt>
+<dt id="arg-exposure-time">exposure_time<a class="anchor" aria-label="anchor" href="#arg-exposure-time"></a></dt>
 <dd><p>Character string representing the original vaccination time variable in <code>matched_data</code></p></dd>
 
 
@@ -97,23 +97,18 @@ index date</p></li>
 <dd><p>The time excluded after vaccination to allow building up of
 immunity</p></dd>
 
-
-<dt id="arg-pair-censoring">pair_censoring<a class="anchor" aria-label="anchor" href="#arg-pair-censoring"></a></dt>
-<dd><p>Logical to indicate if matched pairs should be censored
-when unvaccinated pair becomes vaccinated.</p></dd>
-
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A data frame representing the analysis-eligible matched dataset (a subset of <code>matched data</code>).
-Contains all variables in <code>matched_data</code>, plus the following variables</p><dl><dt>&lt;event_name&gt;_d</dt>
+Contains all variables in <code>matched_data</code>, plus the following variables</p><dl><dt>match_&lt;outcome_status&gt;</dt>
 <dd><p>Event variable after adjusting for pair_censoring</p></dd>
 
-<dt>&lt;outcome_name&gt;_matched</dt>
+<dt>match_&lt;outcome_time&gt;</dt>
 <dd><p>Outcome variable after adjusting for pair_censoring</p></dd>
 
-<dt>T_d</dt>
-<dd><p>Time to endpoint from matched index date (adjusted for pair_censoring if requested)</p></dd>
+<dt>match_T</dt>
+<dd><p>Time to endpoint from matched index date after adjusting for pair_censoring</p></dd>
 
 
 </dl></div>
@@ -127,7 +122,7 @@ Contains all variables in <code>matched_data</code>, plus the following variable
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
 </div>
 
     </footer></div>

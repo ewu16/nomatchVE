@@ -20,6 +20,7 @@ groups based on Kaplan Meier estimation."></head><body>
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/ewu16/nomatchVE/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul></div>
 
 
@@ -29,7 +30,7 @@ groups based on Kaplan Meier estimation."></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Get the marginal cumulative incidence in the treated and untreated groups based on Kaplan Meier estimation.</h1>
-
+      <small class="dont-index">Source: <a href="https://github.com/ewu16/nomatchVE/blob/main/R/compute_marginal_ve.R" class="external-link"><code>R/compute_marginal_ve.R</code></a></small>
       <div class="d-none name"><code>compute_km_ve.Rd</code></div>
     </div>
 
@@ -45,8 +46,8 @@ groups based on Kaplan Meier estimation.</p>
 <span>  <span class="va">adata_outcome_name</span>,</span>
 <span>  <span class="va">adata_event_name</span>,</span>
 <span>  <span class="va">adata_trt_name</span>,</span>
-<span>  <span class="va">times</span>,</span>
-<span>  return_models <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  <span class="va">eval_times</span>,</span>
+<span>  keep_models <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -71,13 +72,20 @@ time should be the time to event from vaccination/matched index date</p></dd>
 <dd><p>Character string specifying the treatment variable in <code>adata</code></p></dd>
 
 
-<dt id="arg-times">times<a class="anchor" aria-label="anchor" href="#arg-times"></a></dt>
-<dd><p>A numeric vector containing the times (relative to time of vaccination) at which to return
-the cumulative incidence estimates.</p></dd>
+<dt id="arg-eval-times">eval_times<a class="anchor" aria-label="anchor" href="#arg-eval-times"></a></dt>
+<dd><p>Numeric vector specifying the timepoints at which to compute
+cumulative incidence and the derived effect measures. The timepoints should
+be expressed in terms of time since exposure. All values must be greater
+than <code>tau</code> and and should correspond to clinically meaningful follow-up
+durations, such as 30, 60, or 90 days after exposure. A fine grid of
+timepoints (e.g., <code>eval_times = (tau+1):100</code>) can be provided if cumulative
+incidence curves over time are desired.</p></dd>
 
 
-<dt id="arg-return-models">return_models<a class="anchor" aria-label="anchor" href="#arg-return-models"></a></dt>
-<dd><p>Logical value: Should fitted survival models be returned?</p></dd>
+<dt id="arg-keep-models">keep_models<a class="anchor" aria-label="anchor" href="#arg-keep-models"></a></dt>
+<dd><p>Logical; return the two fitted hazard models used to compute
+cumulative incidences?
+Default: <code>TRUE</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -87,7 +95,7 @@ the cumulative incidence estimates.</p></dd>
 incidence/VE terms and the rows are the requested time points for evaluation.</p></dd>
 
 <dt>models</dt>
-<dd><p>If <code>return_models = TRUE</code>, the models used to compute risk and VE</p></dd>
+<dd><p>If <code>keep_models = TRUE</code>, the models used to compute risk and VE</p></dd>
 
 
 </dl></div>
@@ -101,7 +109,7 @@ incidence/VE terms and the rows are the requested time points for evaluation.</p
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
 </div>
 
     </footer></div>
