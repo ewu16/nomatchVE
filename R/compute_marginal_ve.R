@@ -16,8 +16,8 @@
 #'
 #' @return A list containing the following:
 #' \describe{
-#' \item{estimates}{A matrix of estimates. The columns of the matrix are the cumulative
-#'  incidence/VE terms and the rows are the requested time points for evaluation.}
+#' \item{pt_estimates}{Matrix of point estimates with one row per evaluation time and
+#'     one column per measure (`cuminc_0`, `cuminc_1`, `risk_ratio`,`vaccine_effectiveness`).}
 #' \item{models}{If `keep_models = TRUE`, the models used to compute risk and VE}
 #' }
 #' @keywords internal
@@ -58,13 +58,7 @@ compute_marginal_ve <- function(adata,
 #' groups based on Kaplan Meier estimation.
 #'
 #' @inheritParams compute_marginal_ve
-#'
-#' @return A list containing the following:
-#' \describe{
-#' \item{estimates}{A matrix of estimates. The columns of the matrix are the cumulative
-#'  incidence/VE terms and the rows are the requested time points for evaluation.}
-#' \item{models}{If `keep_models = TRUE`, the models used to compute risk and VE}
-#'}
+#' @inherit compute_marginal_ve return
 #'
 #' @keywords internal
 
@@ -82,14 +76,14 @@ compute_km_ve <- function(adata,
     rr <- cuminc_1/cuminc_0
     ve <- 1 - rr
 
-    estimates <- cbind(cuminc_0, cuminc_1,
+    est  <- cbind(cuminc_0, cuminc_1,
                        "risk_ratio" = rr,
                        "vaccine_effectiveness" = ve)
 
-    rownames(estimates) <- eval_times
+    rownames(est) <- eval_times
 
 
-    out <- list(estimates = estimates)
+    out <- list(pt_estimates = est)
 
     if(keep_models){
         out$models <- km_fit
@@ -107,16 +101,7 @@ compute_km_ve <- function(adata,
 #' and averaging these predictions over everyone in the treatment group.
 #'
 #' @inheritParams compute_marginal_ve
-#'
-#' @return A list containing the following:
-#' \describe{
-#' \item{estimates}{A matrix of estimates. The columns of the matrix are the cumulative
-#'  incidence/VE terms and the rows are the requested time points for evaluation.}
-#' \item{models}{If `keep_models = TRUE`, the models used to compute risk and VE}
-#' }
-#'
-#' @keywords internal
-#'
+#' @inherit compute_marginal_ve return
 compute_cox_ve <- function(adata,
                              adata_outcome_name,
                              adata_event_name,
@@ -240,13 +225,12 @@ compute_cox_ve <- function(adata,
     rr <- cuminc_1/cuminc_0
     ve <- 1 - rr
 
-    estimates <- cbind(cuminc_0, cuminc_1,
+    est <- cbind(cuminc_0, cuminc_1,
                        "risk_ratio" = rr,
                        "vaccine_effectiveness" = ve)
-    rownames(estimates) <- eval_times
+    rownames(est) <- eval_times
 
-
-    out <- list(estimates = estimates)
+    out <- list(pt_estimates = est)
 
     if(keep_models){
         out$models <- models
