@@ -69,64 +69,44 @@ add_simultaneous_ci <- function(object, seed = NULL){
   }
 
 
-
-  # Use alpha from the object
   alpha <- object$alpha
-
+  estimates <- object$estimates
   boot_samples <- object$boot_samples
 
-  transformed_boot_samples <- list(logit(boot_samples[[1]]),
-                                   logit(boot_samples[[2]]),
-                                   log_ve(boot_samples[[3]]))
+
+  transformed_boot_samples <- lapply(names(boot_samples), \(term){
+       tr_name <- .term_transform_map[term]
+       tf <- .forward_transformations[[tr_name]]
+       tf(boot_samples[[i]])
+  })
+
   names(transformed_boot_samples) <- names(boot_samples)
 
-  #compute z_star for each term
+  # Compute z_star for each term
   z_star_results <- lapply(transformed_boot_samples, \(mat) get_z_star(mat, alpha = alpha, seed = seed))
   z_star <- sapply(z_star_results, \(x) x$z_star)
   excluded_timepoints <- lapply(z_star_results, \(x) as.numeric(x$excluded_timepoint))
-  #print(z_star)
 
-   #compute ci for each timepoint
-   estimates <- object$estimates
-   pt_est <- lapply(estimates, \(x) x[,"estimate"])
+   # Compute simultaneous confidence intervals using z_star
+   simul_est <- lapply(names(boot_samples), \(term){
+       simul <- compute_wald_ci(x = estimates[[term]][, "estimate"],
+                       boot_x = boot_samples[[term]],
+                       transform = .term_transform_map[term] ,
+                       z_star = z_star[term])
+       #Rename columns
+       colnames(simul) <- gsub("wald", "simul", colnames(simul))
+       # Remove excluded times
+       unused_times <- excluded_timepoints[[term]]
+       simul[rownames(simul) %in% unused_times, ] <- NA
+       simul
 
-
-  cuminc_0_ci <- compute_wald_ci(x = pt_est[[1]],
-                                     boot_x = boot_samples[[1]],
-                                     transform = "logit",
-                                     z_star = z_star[1])
-
-  cuminc_1_ci <- compute_wald_ci(x = pt_est[[2]],
-                                     boot_x = boot_samples[[2]],
-                                     transform = "logit",
-                                     z_star = z_star[2])
-
-  ve_ci <- compute_wald_ci(x = pt_est[[3]],
-                                 boot_x = boot_samples[[3]],
-                                 transform = "log_ve",
-                                 z_star = z_star[3])
-
-  ci_estimates <- list(cuminc_0 = cbind(estimate = pt_est[[1]],  cuminc_0_ci),
-                       cuminc_1 = cbind(estimate = pt_est[[2]],  cuminc_1_ci),
-                       ve = cbind(estimate = pt_est[[3]],  ve_ci))
-
-  # Format simultaneous CI results for each term
-  simul_ci_list <- lapply(seq_along(ci_estimates), \(i){
-    x <- ci_estimates[[i]]
-    # remove simultaneous CI estimates for excluded timepoints
-    unused_times <- excluded_timepoints[[i]]
-    x[rownames(x) %in% unused_times, ] <- NA
-    colnames(x) <- gsub("wald", "simul", colnames(x))
-    x[, c("simul_lower", "simul_upper", "simul_n")]
-  })
-  names(simul_ci_list) <- names(ci_estimates)
-
+   })
+   names(simul_est) <- names(boot_samples)
 
   # Add simultaneous CIs to estimates
-  object$estimates[[1]] <- cbind(object$estimates[[1]], simul_ci_list[[1]])
-  object$estimates[[2]] <- cbind(object$estimates[[2]], simul_ci_list[[2]])
-  object$estimates[[3]] <- cbind(object$estimates[[3]], simul_ci_list[[3]])
-
+  for(term in names(estimates)){
+      object$estimates[[term]] <- cbind(object$estimates[[term]], simul_est[[term]])
+  }
 
   object$simul_z_star <- z_star
   object$simul_excluded_timepoints <- excluded_timepoints
