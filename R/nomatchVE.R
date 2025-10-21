@@ -96,7 +96,7 @@
 #'      Each matrix has one row per value in `eval_times` and columns including the
 #'     point estimate (`estimate`) and, when requested, confidence limits of the form
 #'     (`{wald/percentile}_lower`, `{wald/percentile}_upper`). }
-#'   \item{gp_list}{List with dataframes `g_weights`, `p_weights` specifying
+#'   \item{weights}{List with dataframes `g_weights`, `p_weights` specifying
 #'   the marginalizing weights used for averaging over exposure eval_times and covariates.}
 #'   \item{model_0}{Fitted hazard model for the unexposed group.
 #'   See **Modeling** section for details.}
@@ -198,8 +198,6 @@ nomatchVE <- function(data,
     ci_type   <- match.arg(ci_type)
 
     # Validate inputs
-    censor_time <- max(eval_times)
-
     validate_ve_inputs(
         data = data,
         outcome_time = outcome_time,
@@ -208,8 +206,7 @@ nomatchVE <- function(data,
         exposure_time = exposure_time,
         covariates = covariates,
         tau = tau,
-        eval_times = eval_times,
-        censor_time = censor_time
+        eval_times = eval_times
     )
 
      if(identical(weights_source, "custom") ){
@@ -218,14 +215,21 @@ nomatchVE <- function(data,
              exposure_time      = exposure_time,
              covariates    = covariates
          )
-     }
 
+         # Format weights to improve efficiency of internal calls
+         custom_gp_list <- canonicalize_weights(
+             weights = weights,
+             exposure_time  = exposure_time,
+             covariates    = covariates
+         )
+     }else{
+        custom_gp_list <- NULL
+     }
 
 
      # --------------------------------------------------------------------------
      # 1 - Get original estimate
      # --------------------------------------------------------------------------
-
      estimation_args <- list(data = data,
                              outcome_time = outcome_time,
                              outcome_status = outcome_status,
@@ -234,57 +238,68 @@ nomatchVE <- function(data,
                              covariates = covariates,
                              tau = tau,
                              eval_times = eval_times,
-                             censor_time = censor_time,
-                             weights_source = weights_source,
-                             custom_weights = custom_weights
+                             custom_gp_list = custom_gp_list
                             )
 
-     original <- do.call("get_one_nomatch_ve", estimation_args)
-
+     original <- do.call(get_one_nomatch_ve, estimation_args)
+     pt_est <- original$pt_estimates
 
     # --------------------------------------------------------------------------
     # 2 - Get bootstrap CI
     # --------------------------------------------------------------------------
-     estimate_nomatch_ci_args <- c(estimation_args[!names(estimation_args) %in% c("custom_weights")] ,
-                           list(pt_est = original$estimates,
-                                gp_list = original$gp_list,
-                                ci_type = ci_type,
-                                limit_type = "limit",
-                                boot_reps = boot_reps,
-                                alpha = alpha,
-                                keep_boot_samples = keep_boot_samples,
-                                n_cores = n_cores))
+    # Helper returns NULL if boot_reps = 0
+     boot_inference <- estimate_bootstrap_ci(
+         one_boot_function  = one_boot_nomatch,
+         one_boot_args      = estimation_args,
+         ci_type            = ci_type,
+         boot_reps          = boot_reps,
+         pt_est             = pt_est,
+         alpha              = alpha,
+         keep_boot_samples  = keep_boot_samples,
+         n_cores            = n_cores
+     )
 
-
-     boot_inference <- do.call("estimate_nomatch_ci", estimate_nomatch_ci_args)
-
-
-     # --------------------------------------------------------------------------
-     # 3 - Final result
-     # --------------------------------------------------------------------------
-     pt_est <- original$estimates
      ci_est <-boot_inference$ci_estimates
 
-     # Only keep cumulative incidences and requested effect measure
-     cuminc  <- list(cuminc_0 =  cbind(estimate = pt_est[, "cuminc_0"], ci_est[["cuminc_0"]]),
-                     cuminc_1 = cbind(estimate = pt_est[, "cuminc_1"], ci_est[["cuminc_1"]]))
+     # --------------------------------------------------------------------------
+     # 3 - Combine estimates with bootstrap CI
+     # --------------------------------------------------------------------------
+     terms_keep <- c("cuminc_0", "cuminc_1", effect)
 
-     effect_measure  <- setNames(list(cbind(estimate = pt_est[, effect], ci_est[[effect]])),
-                         effect)
-
-     estimates <- c(cuminc, effect_measure)
-     boot_inference$boot_samples <-  boot_inference$boot_samples[names(estimates)]
-
+     add_ci_columns <- function(term, pt_est, ci_est){
+         cbind(estimate = pt_est[, term], ci_est[[term]])
+     }
+     estimates <- setNames(
+         lapply(terms_keep, \(term) add_ci_columns(term, pt_est, ci_est)),
+         terms_keep
+         )
 
      # --------------------------------------------------------------------------
      # 4 - Return
      # --------------------------------------------------------------------------
 
+     # Define the weights to return
+     if(identical(weights_source, "custom")){
+         weights <- custom_weights
+     }else{
+         weights <- gp_to_weights(original$gp_list)
+     }
+
+    # Build return object
      out <- list(
+         # Core output
          estimates = estimates,
-         gp_list = original$gp_list,
          model_0 = original$model_0,
          model_1 = original$model_1,
+         weights = weights,
+
+         # Bootstrap information if available
+         n_success_boot   = boot_inference$n_success_boot,
+         boot_errors  = boot_inference$boot_errors,
+         boot_nas     = boot_inference$boot_nas,
+         boot_samples     = if (keep_boot_samples) boot_inference$boot_samples[terms_keep] else NULL,
+
+         # User-provided or default specifications
          outcome_time = outcome_time,
          outcome_status = outcome_status,
          exposure = exposure,
@@ -295,17 +310,13 @@ nomatchVE <- function(data,
          effect = effect,
          ci_type = ci_type,
          boot_reps = boot_reps,
-         n_success_boot = boot_inference$n_success_boot,
-         boot_error_inds = boot_inference$error_inds,
-         boot_na_list =boot_inference$boot_na_list,
          alpha = alpha,
-         call = call)
 
-    if(keep_boot_samples){
-        out$boot_samples <- boot_inference$boot_samples
-    }
+         # Meta information
+         call = call,
+         method =  "nomatchVE (G-computation)"
+         )
 
-     out$method <- "nomatchVE (G-computation)"
      class(out) <- "vefit"
 
     return(out)

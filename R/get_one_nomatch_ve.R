@@ -23,12 +23,6 @@
 #'   One of:
 #'   * `"observed"` (default): estimate weights from the observed data;
 #'   * `"custom"`: use user-specified weights provided via `custom_weights` argument;
-#' @param formula_0 Either a formula or a pre-fit `coxph` model object for the
-#'   unvaccinated hazard (original time scale). If a fitted model is provided,
-#'   it will be used directly instead of fitting a new model. Intended for advanced use.
-#' @param formula_1 Either a formula or a pre-fit  `coxph` model object for the
-#'   vaccinated hazard (time-since-exposure scale). If a fitted model is provided,
-#'   it will be used directly instead of fitting a new model. Intended for advanced use.
 #' @param return_gp_list Logical; return marginalizing weights? Default is
 #'   TRUE.
 #' @param return_matching Logical; return matched datasets? Default is
@@ -37,11 +31,10 @@
 #'
 ##' @return List with components:
 #' \describe{
-#'   \item{estimates}{List of matrices: `cuminc_0`, `cuminc_1`, `risk_ratio`, `vaccine_effectiveness`
-#'   where each matrix has one row per timepoint}
+#'   \item{pt_estimates}{Matrix of point estimates with one row per evaluation time and
+#'     one column per measure (`cuminc_0`, `cuminc_1`, `risk_ratio`,`vaccine_effectiveness`).}
 #'   \item{model_0, model_1}{Fitted Cox models (if `keep_models = TRUE`)}
 #'   \item{gp_list}{Marginalizing distributions (if `return_gp_list = TRUE`)}
-#'   \item{matched_data, matched_adata}{Matched datasets (if `weights_source = "matched"`)}
 #' }
 #'
 #' @keywords internal
@@ -56,19 +49,9 @@ get_one_nomatch_ve <- function(data,
                        tau,
                        eval_times,
                        censor_time = max(eval_times),
-                       effect = c("vaccine_effectiveness", "risk_ratio"),
-                       weights_source = c("observed", "custom"),
-                       custom_weights = NULL,
+                       custom_gp_list = NULL,
                        keep_models = TRUE,
                        return_gp_list = TRUE){
-
-    # --------------------------------------------------------------------------
-    # 0 - Check inputs/set defaults
-    # --------------------------------------------------------------------------
-
-    #Normalize user inputs
-    effect <- match.arg(effect)
-    weights_source <- match.arg(weights_source)
 
 
     # --------------------------------------------------------------------------
@@ -92,7 +75,7 @@ get_one_nomatch_ve <- function(data,
                                    covariates = covariates,
                                    tau = tau)
     }else if(identical(weights_source, "custom")){
-        gp_list <- canonicalize_weights(custom_weights)
+        gp_list <- custom_gp_list
     }
 
     # --------------------------------------------------------------------------
@@ -101,12 +84,11 @@ get_one_nomatch_ve <- function(data,
     cuminc <- compute_psi_bar_times(fit_0, fit_1, exposure_time, eval_times, tau, gp_list$g_weights, gp_list = gp_list)
     rr <-  cuminc[, "cuminc_1"]/cuminc[, "cuminc_0"]
     ve <- 1 - rr
-    estimates <- cbind(cuminc, "risk_ratio" = rr, "vaccine_effectiveness" = ve)
 
     # --------------------------------------------------------------------------
     # Return items
     # --------------------------------------------------------------------------
-    out <- list(estimates = estimates)
+    out <- list(pt_estimates = cbind(cuminc, "risk_ratio" = rr, "vaccine_effectiveness" = ve))
 
     if(keep_models){
         out$model_0 <- fit_0
