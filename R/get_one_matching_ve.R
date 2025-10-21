@@ -17,7 +17,6 @@ get_one_matching_ve <- function(matched_data,
                                 exposure_time,
                                 tau,
                                 eval_times,
-                                method = "km",
                                 keep_models = TRUE){
 
 

@@ -1,6 +1,7 @@
 #' Compute a matching-based estimator of VE with confidence intervals
 #'
-#' @description This function is the main function for computing a matching-based estimator.
+#' @description This function is the main function for computing a matching-based estimator
+#' based on Kaplan Meier estimation.
 #'
 #' @inheritParams nomatchVE
 #' @inheritParams clean_matched_data
@@ -40,12 +41,14 @@ matching_ve <- function(matched_data,
 
 
     # Check data/inputs
-    stopifnot("<outcome_time> not in data" = outcome_time %in% names(matched_data))
-    stopifnot("<outcome_status>  not in data" = outcome_status %in% names(matched_data))
-    stopifnot("<exposure> not in data" = exposure %in% names(matched_data))
-    stopifnot("<exposure_time> not in data" = exposure %in% names(matched_data))
+    validate_data(
+        data = matched_data,
+        outcome_time = outcome_time,
+        exposure = exposure,
+        exposure_time = exposure_time,
+        covariates = matching_vars
+    )
 
-    adjust <- NULL
     # --------------------------------------------------------------------------
     # 1 - Get original estimate
     # --------------------------------------------------------------------------
@@ -57,76 +60,75 @@ matching_ve <- function(matched_data,
                             tau = tau,
                             eval_times = eval_times)
 
-    original <- do.call("get_one_matching_ve", estimation_args)
+    original <- do.call(get_one_matching_ve, estimation_args)
+    pt_est <- original$pt_estimates
 
 
     # --------------------------------------------------------------------------
     # 2 - Get bootstrap CI
     # --------------------------------------------------------------------------
-    estimate_matching_ci_args <- c(estimation_args,
-                                   list(ci_type = ci_type,
-                                        limit_type = "fixed",
-                                        data = data,
-                                        boot_reps = boot_reps,
-                                        pt_est = original$estimates,
-                                        alpha = alpha,
-                                        keep_boot_samples = keep_boot_samples,
-                                        n_cores = n_cores))
 
-    boot_inference <- do.call("estimate_matching_ci", estimate_matching_ci_args)
+    # Helper returns NULL if boot_reps = 0
+    boot_inference <- estimate_bootstrap_ci(
+        one_boot_function  = one_boot_matching,
+        one_boot_args      = estimation_args,
+        ci_type            = ci_type,
+        boot_reps          = boot_reps,
+        pt_est             = pt_est,
+        alpha              = alpha,
+        keep_boot_samples  = keep_boot_samples,
+        n_cores            = n_cores
+    )
+    ci_est <- boot_inference$ci_estimates
+
 
     # --------------------------------------------------------------------------
-    # 3 - Format and return results
+    # 3 - Combine estimates with bootstrap CI
     # --------------------------------------------------------------------------
-    pt_est <- original$estimates
-    ci_est <-boot_inference$ci_estimates
+    terms_keep <- c("cuminc_0", "cuminc_1", effect)
 
-    # Only keep cumulative incidences and requested effect measure
-    cuminc  <- list(cuminc_0 =  cbind(estimate = pt_est[, "cuminc_0"], ci_est[["cuminc_0"]]),
-                    cuminc_1 = cbind(estimate = pt_est[, "cuminc_1"], ci_est[["cuminc_1"]]))
-
-    effect_measure  <- setNames(list(cbind(estimate = pt_est[, effect], ci_est[[effect]])),
-                        effect)
-
-    estimates <- c(cuminc, effect_measure)
-    boot_inference$boot_samples <-  boot_inference$boot_samples[names(estimates)]
-
+    add_ci_columns <- function(term, pt_est, ci_est){
+        cbind(estimate = pt_est[, term], ci_est[[term]])
+    }
+    estimates <- setNames(
+        lapply(terms_keep, \(term) add_ci_columns(term, pt_est, ci_est)),
+        terms_keep
+    )
 
     # --------------------------------------------------------------------------
     # 4 - Return
     # --------------------------------------------------------------------------
 
-    out <- list(estimates = estimates,
-                outcome_time = outcome_time,
-                outcome_status = outcome_status,
-                exposure = exposure,
-                exposure_time = exposure_time,
-                tau = tau,
-                eval_times = eval_times,
-                effect = effect,
-                ci_type = ci_type,
-                boot_reps = boot_reps,
-                n_success_boot = boot_inference$n_success_boot,
-                boot_error_list = boot_inference$error_list,
-                boot_na_list =boot_inference$ boot_na_list,
-                alpha = alpha,
-                call = call)
+    # Build return object
+    out <- list(
+        # Core output
+        estimates = estimates,
+        models = original$models,
 
+        # Bootstrap information if available
+        n_success_boot   = boot_inference$n_success_boot,
+        boot_errors  = boot_inference$boot_errors,
+        boot_nas     = boot_inference$boot_nas,
+        boot_samples     = if (keep_boot_samples) boot_inference$boot_samples[terms_keep] else NULL,
 
-    if(keep_models){
-        out$models <- original$models
-    }
-    if(keep_boot_samples){
-        out$boot_samples <- boot_inference$boot_samples
-    }
+        # User-provided or default specifications
+        outcome_time = outcome_time,
+        outcome_status = outcome_status,
+        exposure = exposure,
+        exposure_time = exposure_time,
+        tau = tau,
+        eval_times = eval_times,
+        effect = effect,
+        ci_type = ci_type,
+        boot_reps = boot_reps,
+        alpha = alpha,
 
-    #for debugging
-    #out$original <- original
-    #out$one_boot_args <- boot_inference$one_boot_args
+        # Meta information
+        call = call,
+        method =  "matching"
+    )
 
-    out$method <- "matching"
     class(out) <- "vefit"
-
 
     return(out)
 }
