@@ -25,8 +25,6 @@
 #' @noRd
 #'
 compute_boot_ci <- function(x, boot_x, ci_type, alpha = .05, transform = NULL, z_star = NULL){
-    #note boot_x may contains NAs. not able to subset because need to keep matrix structure
-
     if(ci_type == "wald"){
         ci_out <- compute_wald_ci(x, boot_x, alpha, transform, z_star)
 
@@ -47,43 +45,43 @@ compute_boot_ci <- function(x, boot_x, ci_type, alpha = .05, transform = NULL, z
 #' @keywords internal
 #' @noRd
 compute_wald_ci <- function(x, boot_x,  alpha = .05, transform, z_star = NULL){
-    if(!is.null(z_star)){
-        z_crit <- z_star
-    }else{
-        z_crit <-  stats::qnorm(1 - alpha/2)
-    }
-    if(transform == "logit"){
 
-        x_logodds  <- logit(x)
-        boot_logodds <- logit(boot_x)
-        boot_sd <- apply(boot_logodds, 2, \(x) stats::sd(x[is.finite(x)], na.rm = TRUE))
-        boot_n <- apply(boot_logodds, 2, \(x) sum(is.finite(x)))
-        lower <- stats::plogis(x_logodds - z_crit*boot_sd)
-        upper <- stats::plogis(x_logodds + z_crit*boot_sd)
-    }else if(transform == "log_ve"){
-        x_log <- log_ve(x)
-        boot_log <- log_ve(boot_x)
-        boot_sd <- apply(boot_log, 2, \(x) stats::sd(x[is.finite(x)], na.rm = TRUE))
-        boot_n <- apply(boot_log, 2, \(x) sum(is.finite(x)))
-        lower <- -1*(exp(x_log + z_crit*boot_sd) - 1)
-        upper <-  -1*(exp(x_log - z_crit*boot_sd) - 1)
-    }else if(transform == "log_rr"){
-        x_log <- log(x)
-        boot_log <- log(boot_x)
-        boot_sd <- apply(boot_log, 2, \(x) stats::sd(x[is.finite(x)], na.rm = TRUE))
-        boot_n <- apply(boot_log, 2, \(x) sum(is.finite(x)))
-        lower <- exp(x_log - z_crit*boot_sd)
-        upper <- exp(x_log + z_crit*boot_sd)
-    }
-    wald_ci <- cbind(lower, upper, wald_n = boot_n)
-    colnames(wald_ci) <- c("wald_lower", "wald_upper", "wald_n")
-    wald_ci
+    z <- if (!is.null(z_star)) z_star else stats::qnorm(1 - alpha/2)
+
+    #Define the functions for forward and back transformation
+    tf <- switch(transform,
+        "logit" = list(
+            fwd   = stats::qlogis,
+            lower = function(eta, sd) stats::plogis(eta - z * sd),
+            upper = function(eta, sd) stats::plogis(eta + z * sd)
+        ),
+        "log_ve" = list(
+            fwd   = function(y) log(1-y),
+            lower = function(eta, sd) 1 - exp(eta + z * sd),
+            upper = function(eta, sd) 1 - exp(eta - z * sd)
+        ),
+        "log_rr" = list(
+            fwd   = log,
+            lower = function(eta, sd) exp(eta - z * sd),
+            upper = function(eta, sd) exp(eta + z * sd)
+        )
+    )
+
+    # transform
+    eta_x    <- tf$fwd(x)
+    eta_boot <- tf$fwd(boot_x)
+
+    # bootstrap SDs/counts ignoring non-finite draws
+    col_sd  <- apply(eta_boot, 2, function(col) stats::sd(col[is.finite(col)], na.rm = TRUE))
+    boot_n  <- apply(eta_boot, 2, function(col) sum(is.finite(col)))
+
+    # back-transform CI limits
+    lower <- tf$lower(eta_x, col_sd)
+    upper <- tf$upper(eta_x, col_sd)
+
+    cbind(wald_lower = lower, wald_upper = upper, wald_n = boot_n)
+
 }
-
-
-# Compute transformations for Wald confidence-intervals
-logit <- function(x){log(x/(1-x))}
-log_ve <- function(x){log(1-x)}
 
 
 #' @rdname compute_boot_ci
@@ -92,7 +90,7 @@ log_ve <- function(x){log(1-x)}
 compute_percentile_ci <- function(boot_x, alpha = .05){
     lower <- apply(boot_x, 2, \(x) stats::quantile(x, alpha/2, na.rm = TRUE))
     upper <- apply(boot_x, 2, \(x) stats::quantile(x, 1 - alpha/2, na.rm = TRUE))
-    percentile_ci <- cbind(lower, upper)
-    colnames(percentile_ci) <- c("percentile_lower", "percentile_upper")
-    percentile_ci
+    boot_n <- apply(boot_x, 2, \(x) sum(!is.na(x)))
+
+    cbind(percentile_lower = lower, percentile_upper = upper, percentile_n = boot_n)
 }
