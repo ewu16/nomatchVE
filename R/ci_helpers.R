@@ -40,6 +40,47 @@ compute_boot_ci <- function(x, boot_x, ci_type, alpha = .05, transform = NULL, z
     ci_out
 }
 
+#' Internal map of term → transformation type
+#' @keywords internal
+.term_transform_map <- c(
+    cuminc_0              = "logit",
+    cuminc_1              = "logit",
+    risk_ratio            = "log_rr",
+    vaccine_effectiveness = "log_ve"
+)
+
+#' Internal forward transformations
+#'
+#' These define how estimates are transformed before applying
+#' the Wald CI (e.g., taking log or logit).
+.forward_transformations <- list(
+    "logit" =  stats::qlogis,
+    "log_ve" = function(y) log(1-y),
+    "log_rr" =  log
+)
+
+#' Internal backward (inverse) transformations
+#'
+#' These define how to back-transform point estimates
+#' Functions take arguments `(eta, sd, z)` and return values
+#' on the original scale.
+#' @keywords internal
+.backward_transformations <- list(
+    "logit" = list(
+        lower = function(eta, sd, z) stats::plogis(eta - z * sd),
+        upper = function(eta, sd, z) stats::plogis(eta + z * sd)
+    ),
+    "log_ve" = list(
+        lower = function(eta, sd, z) 1 - exp(eta + z * sd),
+        upper = function(eta, sd, z) 1 - exp(eta - z * sd)
+    ),
+    "log_rr" = list(
+        lower = function(eta, sd, z) exp(eta - z * sd),
+        upper = function(eta, sd, z) exp(eta + z * sd)
+    )
+)
+
+
 
 #' @rdname compute_boot_ci
 #' @keywords internal
@@ -48,36 +89,20 @@ compute_wald_ci <- function(x, boot_x,  alpha = .05, transform, z_star = NULL){
 
     z <- if (!is.null(z_star)) z_star else stats::qnorm(1 - alpha/2)
 
-    #Define the functions for forward and back transformation
-    tf <- switch(transform,
-        "logit" = list(
-            fwd   = stats::qlogis,
-            lower = function(eta, sd) stats::plogis(eta - z * sd),
-            upper = function(eta, sd) stats::plogis(eta + z * sd)
-        ),
-        "log_ve" = list(
-            fwd   = function(y) log(1-y),
-            lower = function(eta, sd) 1 - exp(eta + z * sd),
-            upper = function(eta, sd) 1 - exp(eta - z * sd)
-        ),
-        "log_rr" = list(
-            fwd   = log,
-            lower = function(eta, sd) exp(eta - z * sd),
-            upper = function(eta, sd) exp(eta + z * sd)
-        )
-    )
+    fwd_trans  <- .forward_transformations[[transform]]
+    back_trans <- .backward_transformations[[transform]]
 
     # transform
-    eta_x    <- tf$fwd(x)
-    eta_boot <- tf$fwd(boot_x)
+    eta_x    <-  fwd_trans(x)
+    eta_boot <-  fwd_trans(boot_x)
 
     # bootstrap SDs/counts ignoring non-finite draws
     col_sd  <- apply(eta_boot, 2, function(col) stats::sd(col[is.finite(col)], na.rm = TRUE))
     boot_n  <- apply(eta_boot, 2, function(col) sum(is.finite(col)))
 
     # back-transform CI limits
-    lower <- tf$lower(eta_x, col_sd)
-    upper <- tf$upper(eta_x, col_sd)
+    lower <- back_trans$lower(eta_x, col_sd, z)
+    upper <- back_trans$upper(eta_x, col_sd, z)
 
     cbind(wald_lower = lower, wald_upper = upper, wald_n = boot_n)
 
@@ -88,8 +113,8 @@ compute_wald_ci <- function(x, boot_x,  alpha = .05, transform, z_star = NULL){
 #' @keywords internal
 #' @noRd
 compute_percentile_ci <- function(boot_x, alpha = .05){
-    lower <- apply(boot_x, 2, \(x) stats::quantile(x, alpha/2, na.rm = TRUE))
-    upper <- apply(boot_x, 2, \(x) stats::quantile(x, 1 - alpha/2, na.rm = TRUE))
+    lower <-  apply(boot_x, 2, \(x) stats::quantile(x, alpha/2, na.rm = TRUE))
+    upper <-  apply(boot_x, 2, \(x) stats::quantile(x, 1 - alpha/2, na.rm = TRUE))
     boot_n <- apply(boot_x, 2, \(x) sum(!is.na(x)))
 
     cbind(percentile_lower = lower, percentile_upper = upper, percentile_n = boot_n)
