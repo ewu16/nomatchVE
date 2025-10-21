@@ -42,6 +42,9 @@ estimate_bootstrap_ci <- function(one_boot_function,
     if(boot_reps == 0){
         return(NULL)
     }
+    if(is.null(pt_est) & ci_type %in% c("wald", "both")){
+        stop("Must provide point estimate to construct Wald confidence intervals")
+    }
 
     # --------------------------------------------------------------------------
     # 1. Run bootstrap
@@ -83,7 +86,8 @@ estimate_bootstrap_ci <- function(one_boot_function,
     eval_times <- one_boot_args$eval_times
 
     boot_samples <- setNames(
-        lapply(1:ncol(boot_mat), \(i) matrix(as.numeric(boot_mat[,i]), ncol = length(eval_times))),
+        lapply(1:ncol(boot_mat), \(i) matrix(as.numeric(boot_mat[,i]), ncol = length(eval_times),
+                                             byrow = TRUE)),
         colnames(boot_mat)
     )
 
