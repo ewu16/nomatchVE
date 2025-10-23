@@ -68,10 +68,13 @@ fit_model_0 <- function(data, outcome_time, outcome_status, exposure, exposure_t
 
     #Fit model
     formula_0_with_response <- stats::update(formula_0, survival::Surv(Y,event) ~ .)
-    fit_0 <- survival::coxph(formula_0_with_response, data_0,
-                             model = TRUE)
-    fit_0$data <- data_0
-    fit_0
+    model_0 <- safe_coxph(formula_0_with_response, data_0, model = TRUE)
+    check_coxph(model_0, "model for unexposed")
+
+    model_0$data <- data_0
+
+    model_0
+
 }
 
 #' @rdname fit_model_0
@@ -108,7 +111,7 @@ fit_model_1 <- function(data, outcome_time, outcome_status, exposure, exposure_t
     #for model_1, censor events after censor_time
     censor_flag <- T1 > censor_time
     T1 <- ifelse(censor_flag, censor_time, T1)
-    event <- ifelse(censor_flag > censor_time, 0, event)
+    event <- ifelse(censor_flag, 0, event)
 
     #Create survival dataset
     data_full <- cbind(T1, event, covars)
@@ -117,12 +120,51 @@ fit_model_1 <- function(data, outcome_time, outcome_status, exposure, exposure_t
 
     #Fit model
     formula_1_with_response <- stats::update(formula_1, survival::Surv(T1, event) ~ .)
-    fit_1 <- survival::coxph(formula_1_with_response, data_1, model = TRUE)
+    model_1 <- safe_coxph(formula_1_with_response, data_1, model = TRUE)
 
-    if(any(is.na(stats::coef(fit_1)))){
-        warning("In model_1, at least one coefficient estimate is  NA",
-                "Check model specification or sample size.")
-    }
-    fit_1$data <- data_1
-    fit_1
+    check_coxph(model_1, "model for exposed")
+
+    model_1$data <- data_1
+
+    model_1
 }
+
+
+safe_coxph <- function(formula, data, ...){
+    fit <- capture_warnings(survival::coxph(formula, data,...))
+    model <- fit$result
+    model$call <- NULL
+    model$warnings <- fit$warnings
+    return(model)
+}
+
+check_coxph <- function(model, model_name){
+    coef <- stats::coef(model)
+
+    if(any(is.na(coef))){
+        warning(paste0("In ", model_name, ", at least one Cox coefficient estimate is NA.\n"),
+                "Terms with NA coefficients: ",
+                paste(names(coef)[is.na(coef)], collapse = ","),
+                call. = FALSE)
+    }
+
+    if(any(abs(coef) >= 10)){
+        large <- abs(coef) >= 10
+        ses <- coef(summary(model))[, "se(coef)", drop = FALSE]
+        warning(paste0("In ", model_name, ", at least one Cox coefficient estimate is large; estimate may be unstable.\n"),
+                "Terms with large coefficients:\n ",
+                paste(paste0(names(coef)[large], ": coef = ", round(coef[large]), "; se = ", round(ses[large,])),
+                      collapse = "\n "),
+                call. = FALSE
+        )
+    }
+   invisible(NULL)
+}
+
+# diagnose_coxph_warnings <- function(model){
+#     cat("N total:", model$n, "\n")
+#     cat("N event:", model$nevent, "\n")
+#     covars <- stats::get_all_vars(model$formula, model$data)
+#
+# }
+
