@@ -30,7 +30,7 @@ get_matching_gp returns marginalizing distributions based on the matched-analysi
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Estimate the marginalizing distribution in the observed or matched analysis-eligible populations.</h1>
-      <small class="dont-index">Source: <a href="https://github.com/ewu16/nomatchVE/blob/main/R/get_marginalizing_weights.R" class="external-link"><code>R/get_marginalizing_weights.R</code></a>, <a href="https://github.com/ewu16/nomatchVE/blob/main/R/get_one_nomatch_ve_advanced.R" class="external-link"><code>R/get_one_nomatch_ve_advanced.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/ewu16/nomatchVE/blob/main/R/get_marginalizing_weights.R" class="external-link"><code>R/get_marginalizing_weights.R</code></a></small>
       <div class="d-none name"><code>get_observed_gp.Rd</code></div>
     </div>
 
@@ -41,16 +41,7 @@ get_matching_gp returns marginalizing distributions based on the matched-analysi
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">get_observed_gp</span><span class="op">(</span><span class="va">data</span>, <span class="va">outcome_time</span>, <span class="va">exposure</span>, <span class="va">exposure_time</span>, <span class="va">covariates</span>, <span class="va">tau</span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu">get_matching_gp</span><span class="op">(</span></span>
-<span>  <span class="va">matched_adata</span>,</span>
-<span>  <span class="va">outcome_name</span>,</span>
-<span>  <span class="va">trt_name</span>,</span>
-<span>  <span class="va">time_name</span>,</span>
-<span>  <span class="va">adjust_vars</span>,</span>
-<span>  <span class="va">tau</span></span>
-<span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">get_observed_gp</span><span class="op">(</span><span class="va">data</span>, <span class="va">outcome_time</span>, <span class="va">exposure</span>, <span class="va">exposure_time</span>, <span class="va">covariates</span>, <span class="va">tau</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -83,10 +74,6 @@ exposure and censoring measured at the chosen time origin.</p></dd>
 
 <dt id="arg-tau">tau<a class="anchor" aria-label="anchor" href="#arg-tau"></a></dt>
 <dd><p>Numeric. Only vaccinated who are at-risk tau days after vaccination are included.</p></dd>
-
-
-<dt id="arg-matched-adata">matched_adata<a class="anchor" aria-label="anchor" href="#arg-matched-adata"></a></dt>
-<dd><p>For <code>get_matching_gp</code>, a data frame representing the matched analysis-eligible population</p></dd>
 
 </dl></div>
     <div class="section level2">

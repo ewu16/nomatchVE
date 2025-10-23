@@ -76,7 +76,13 @@ structure needed if a user passes in <code>custom_weights</code>.</p>
     <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h2>
 
 
-<dl><dt id="arg-outcome-time">outcome_time<a class="anchor" aria-label="anchor" href="#arg-outcome-time"></a></dt>
+<dl><dt id="arg-data">data<a class="anchor" aria-label="anchor" href="#arg-data"></a></dt>
+<dd><p>A data frame with one row per individual containing the columns
+named in <code>outcome_time</code>, <code>outcome_status</code>, <code>exposure</code>, <code>exposure_time</code>, and any
+variables listed in <code>covariates</code>.</p></dd>
+
+
+<dt id="arg-outcome-time">outcome_time<a class="anchor" aria-label="anchor" href="#arg-outcome-time"></a></dt>
 <dd><p>Name of the time-to-event/censoring variable. Time should
 be measured from a given time origin (e.g. study start, enrollment, or age)
 for all individuals.</p></dd>
@@ -101,7 +107,14 @@ exposure and censoring measured at the chosen time origin.</p></dd>
 
 
 <dt id="arg-tau">tau<a class="anchor" aria-label="anchor" href="#arg-tau"></a></dt>
-<dd><p>Numeric. Only vaccinated who are at-risk tau days after vaccination are included.</p></dd>
+<dd><p>Non-negative numeric value specifying the time after exposure that
+should be excluded from the risk evaluation period. This argument is
+primarily intended for vaccination exposures, where it is common to exclude
+the time after vaccination when immunity is still building. Time must be
+measured in the same units as that used for <code>outcome_time</code> and <code>exposure_time</code>
+and should reflect the biological understanding of when vaccine-induced
+immunity develops (usually 1-2 weeks). For non-vaccine exposures, <code>tau</code> can
+be set to 0 (no delay period).</p></dd>
 
 </dl></div>
     <div class="section level2">

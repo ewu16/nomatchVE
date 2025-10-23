@@ -78,9 +78,7 @@ an options to</p><ul><li><p>set censor time in hazard model for the exposed</p><
 <span>  <span class="va">tau</span>,</span>
 <span>  <span class="va">eval_times</span>,</span>
 <span>  censor_time <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">eval_times</span><span class="op">)</span>,</span>
-<span>  effect <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"vaccine_effectiveness"</span>, <span class="st">"risk_ratio"</span><span class="op">)</span>,</span>
-<span>  weights_source <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"observed"</span>, <span class="st">"custom"</span><span class="op">)</span>,</span>
-<span>  custom_weights <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  custom_gp_list <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  keep_models <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  return_gp_list <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -154,33 +152,6 @@ prevents extrapolation beyond the largest evaluation time.
 Typically, users should leave this at the default.</p></dd>
 
 
-<dt id="arg-effect">effect<a class="anchor" aria-label="anchor" href="#arg-effect"></a></dt>
-<dd><p>Character. Type of effect measure to compute and return,
-based on the estimated cumulative incidences. Either
-<code>"vaccine_effectiveness"</code> (default) or <code>"risk_ratio"</code>.</p></dd>
-
-
-<dt id="arg-weights-source">weights_source<a class="anchor" aria-label="anchor" href="#arg-weights-source"></a></dt>
-<dd><p>Character string specifying how to construct marginalizing weights.
-One of:</p><ul><li><p><code>"observed"</code> (default): estimate weights from the observed data;</p></li>
-<li><p><code>"custom"</code>: use user-specified weights provided via <code>custom_weights</code> argument;</p></li>
-</ul></dd>
-
-
-<dt id="arg-custom-weights">custom_weights<a class="anchor" aria-label="anchor" href="#arg-custom-weights"></a></dt>
-<dd><p>a <code>list(g_weights, p_weights)</code> providing weights for
-marginalizing the time- and covariate-specific cumulative incidences. Must
-have the following format:</p><ul><li><p><code>g_weights</code>: data frame with columns</p><ul><li><p>all variables in <code>covariates</code></p></li>
-<li><p><code>exposure_time</code> (time of exposure),</p></li>
-<li><p><code>prob</code> (probability of exposure at the given time within the covariate-group;
-should sum to 1 within each covariate-group)</p></li>
-</ul></li>
-<li><p><code>p_weights</code>: data frame with columns</p><ul><li><p>all variables in <code>covariates</code></p></li>
-<li><p><code>prob</code> (probability of covariate-group; should sum to 1 over all covariate groups.)</p></li>
-</ul></li>
-</ul></dd>
-
-
 <dt id="arg-keep-models">keep_models<a class="anchor" aria-label="anchor" href="#arg-keep-models"></a></dt>
 <dd><p>Logical; return the two fitted hazard models used to compute
 cumulative incidences?
@@ -192,16 +163,11 @@ Default: <code>TRUE</code>.</p></dd>
 TRUE.</p></dd>
 
 
-<dt id="arg-formula-">formula_0<a class="anchor" aria-label="anchor" href="#arg-formula-"></a></dt>
-<dd><p>Either a formula or a pre-fit <code>coxph</code> model object for the
-unvaccinated hazard (original time scale). If a fitted model is provided,
-it will be used directly instead of fitting a new model. Intended for advanced use.</p></dd>
-
-
-<dt id="arg-formula-">formula_1<a class="anchor" aria-label="anchor" href="#arg-formula-"></a></dt>
-<dd><p>Either a formula or a pre-fit  <code>coxph</code> model object for the
-vaccinated hazard (time-since-exposure scale). If a fitted model is provided,
-it will be used directly instead of fitting a new model. Intended for advanced use.</p></dd>
+<dt id="arg-weights-source">weights_source<a class="anchor" aria-label="anchor" href="#arg-weights-source"></a></dt>
+<dd><p>Character string specifying how to construct marginalizing weights.
+One of:</p><ul><li><p><code>"observed"</code> (default): estimate weights from the observed data;</p></li>
+<li><p><code>"custom"</code>: use user-specified weights provided via <code>custom_weights</code> argument;</p></li>
+</ul></dd>
 
 
 <dt id="arg-return-matching">return_matching<a class="anchor" aria-label="anchor" href="#arg-return-matching"></a></dt>
@@ -212,18 +178,15 @@ automatically set to <code>FALSE</code>.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>List with components:</p><dl><dt>estimates</dt>
-<dd><p>List of matrices: <code>cuminc_0</code>, <code>cuminc_1</code>, <code>risk_ratio</code>, <code>vaccine_effectiveness</code>
-where each matrix has one row per timepoint</p></dd>
+    <p>List with components:</p><dl><dt>pt_estimates</dt>
+<dd><p>Matrix of point estimates with one row per evaluation time and
+one column per measure (<code>cuminc_0</code>, <code>cuminc_1</code>, <code>risk_ratio</code>,<code>vaccine_effectiveness</code>).</p></dd>
 
 <dt>model_0, model_1</dt>
 <dd><p>Fitted Cox models (if <code>keep_models = TRUE</code>)</p></dd>
 
 <dt>gp_list</dt>
 <dd><p>Marginalizing distributions (if <code>return_gp_list = TRUE</code>)</p></dd>
-
-<dt>matched_data, matched_adata</dt>
-<dd><p>Matched datasets (if <code>weights_source = "matched"</code>)</p></dd>
 
 
 </dl></div>

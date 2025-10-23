@@ -100,7 +100,7 @@ is excluded from the simultaneous band and a warning is issued.</p>
 <span class="r-in"><span>  keep_boot_samples <span class="op">=</span> <span class="cn">TRUE</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Bootstrapping 100 samples...</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Time difference of 33.32416 secs</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Time difference of 34.83014 secs</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Add simultaneous CIs</span></span></span>
 <span class="r-in"><span><span class="va">fit_simul</span> <span class="op">&lt;-</span> <span class="fu">add_simultaneous_ci</span><span class="op">(</span><span class="va">fit</span>, seed <span class="op">=</span> <span class="fl">123</span><span class="op">)</span></span></span>
@@ -118,26 +118,26 @@ is excluded from the simultaneous band and a warning is issued.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $cuminc_1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>        estimate  wald_lower  wald_upper wald_n simul_lower simul_upper simul_n</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 30  0.006221396 0.004208512 0.009188136    100 0.003767239  0.01025784     100</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 60  0.022928272 0.018800243 0.027936898    100 0.017770525  0.02953799     100</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 90  0.035306397 0.030107105 0.041365278    100 0.028775443  0.04325362     100</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 120 0.044201057 0.038467032 0.050744707    100 0.036978175  0.05275748     100</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 150 0.055121412 0.048595349 0.062466345    100 0.046885519  0.06470580     100</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 180 0.099205626 0.089270693 0.110112536    100 0.086626102  0.11338513     100</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 30  0.006219935 0.004207387 0.009186278    100 0.003774896  0.01023239     100</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 60  0.022925618 0.018798880 0.027932470    100 0.017790314  0.02949875     100</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 90  0.035346676 0.030136494 0.041419157    100 0.028829366  0.04327167     100</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 120 0.044244807 0.038495240 0.050807739    100 0.037033087  0.05278394     100</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 150 0.055146409 0.048610025 0.062503971    100 0.046932711  0.06470000     100</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 180 0.079293545 0.070374259 0.089234758    100 0.068071437  0.09218270     100</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $vaccine_effectiveness</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>        estimate wald_lower wald_upper wald_n simul_lower simul_upper simul_n</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 30   0.46546592  0.1734213 0.65432610    100  0.07207828   0.6920789     100</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 60   0.39517839  0.2376575 0.52015114    100  0.18937369   0.5487327     100</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 90   0.39722334  0.2713054 0.50138274    100  0.23368928   0.5258585     100</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 120  0.33948883  0.2167159 0.44301818    100  0.18047300   0.4676502     100</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 150  0.26979833  0.1510724 0.37191997    100  0.11645255   0.3965299     100</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 180 -0.03593427 -0.1764529 0.08780042    100 -0.21683403   0.1180721     100</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      estimate wald_lower wald_upper wald_n simul_lower simul_upper simul_n</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 30  0.4655914 0.17359894  0.6544141    100  0.07259919   0.6920506     100</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 60  0.3952484 0.23778801  0.5201801    100  0.18967576   0.5486689     100</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 90  0.3965357 0.27036989  0.5008852    100  0.23279397   0.5253306     100</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 120 0.3388351 0.21576468  0.4425920    100  0.17954198   0.4672012     100</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 150 0.2694672 0.15054485  0.3717406    100  0.11597176   0.3963109     100</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 180 0.1719935 0.04951339  0.2786908    100  0.01418941   0.3045371     100</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Visualize</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit_simul</span>, ci_type <span class="op">=</span> <span class="st">"simul"</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in loadNamespace(x):</span> there is no package called ‘ggh4x’</span>
+<span class="r-plt img"><img src="add_simultaneous_ci-1.png" alt="" width="700" height="433"></span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

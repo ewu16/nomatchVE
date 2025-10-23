@@ -222,7 +222,7 @@ Windows. Default: <code>1</code>.</p></dd>
 point estimate (<code>estimate</code>) and, when requested, confidence limits of the form
 (<code>{wald/percentile}_lower</code>, <code>{wald/percentile}_upper</code>).</p></dd>
 
-<dt>gp_list</dt>
+<dt>weights</dt>
 <dd><p>List with dataframes <code>g_weights</code>, <code>p_weights</code> specifying
 the marginalizing weights used for averaging over exposure eval_times and covariates.</p></dd>
 
@@ -293,7 +293,7 @@ by providing <code>n_cores</code> argument.</p>
 <span class="r-in"><span>  n_cores <span class="op">=</span> <span class="fl">2</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Bootstrapping 5 samples...</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Time difference of 1.371821 secs</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Time difference of 1.509261 secs</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># View basic results</span></span></span>
 <span class="r-in"><span><span class="va">fit</span><span class="op">$</span><span class="va">estimates</span></span></span>
@@ -307,22 +307,22 @@ by providing <code>n_cores</code> argument.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 180 0.09576440 0.08852914 0.10352382      5</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $cuminc_1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>        estimate wald_lower  wald_upper wald_n</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 30  0.006221396 0.00490263 0.007892084      5</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 60  0.022928272 0.02175395 0.024164415      5</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 90  0.035306397 0.03194971 0.039001536      5</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 120 0.044201057 0.04127583 0.047323360      5</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 150 0.055121412 0.04940982 0.061450566      5</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 180 0.099205626 0.09157224 0.107400100      5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        estimate wald_lower wald_upper wald_n</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 30  0.006219935 0.00490254 0.00788853      5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 60  0.022925618 0.02174377 0.02417012      5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 90  0.035346676 0.03197190 0.03906329      5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 120 0.044244807 0.04130257 0.04738628      5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 150 0.055146409 0.04937548 0.06154816      5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 180 0.079293545 0.07547382 0.08328917      5</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $vaccine_effectiveness</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>        estimate wald_lower wald_upper wald_n</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 30   0.46546592  0.3216548 0.57878865      5</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 60   0.39517839  0.3201008 0.46196555      5</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 90   0.39722334  0.2812300 0.49449794      5</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 120  0.33948883  0.2407852 0.42536023      5</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 150  0.26979833  0.1526535 0.37074799      5</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 180 -0.03593427 -0.1511121 0.06771911      5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      estimate wald_lower wald_upper wald_n</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 30  0.4655914  0.3219308  0.5788150      5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 60  0.3952484  0.3200516  0.4621291      5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 90  0.3965357  0.2804317  0.4939060      5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 120 0.3388351  0.2402403  0.4246351      5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 150 0.2694672  0.1518457  0.3707770      5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 180 0.1719935  0.0827770  0.2525321      5</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 </code></pre></div>
     </div>
