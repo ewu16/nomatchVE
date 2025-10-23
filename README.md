@@ -73,7 +73,7 @@ fit1 <- nomatchVE(data = simdata,
                   eval_times = seq(30, 180, by = 30),
                   boot_reps = 10)
 #> Bootstrapping 10 samples...
-#> Time difference of 1.496422 secs
+#> Time difference of 1.452928 secs
 
 #Print results 
 fit1        
@@ -87,12 +87,12 @@ fit1
 #> 
 #> Result:
 #>   Timepoint Estimate 95% Wald CI: Lower 95% Wald CI: Upper
-#> 1        30   0.4655             0.0899             0.6860
-#> 2        60   0.3952             0.2359             0.5212
-#> 3        90   0.3972             0.2599             0.5090
-#> 4       120   0.3395             0.2012             0.4538
-#> 5       150   0.2698             0.1387             0.3809
-#> 6       180  -0.0359            -0.1923             0.0999
+#> 1        30    0.466             0.0902              0.686
+#> 2        60    0.395             0.2359              0.521
+#> 3        90    0.397             0.2594              0.508
+#> 4       120    0.339             0.2011              0.453
+#> 5       150    0.269             0.1387              0.380
+#> 6       180    0.172             0.0444              0.283
 #> 
 #> Use summary() for more details
 #> Use plot() to visualize results
@@ -105,7 +105,7 @@ summary(fit1)
 #> ====================================================================== 
 #> 
 #> Method:              nomatchVE (G-computation) 
-#> Evaluation eval_times:    30, 60, 90, 120, 150, 180 
+#> Evaluation times:    30, 60, 90, 120, 150, 180  
 #> Tau (delay period):  14 
 #> Adjusted for:        x1, x2 
 #> 
@@ -114,15 +114,38 @@ summary(fit1)
 #> Successful samples:  10-10  (range across timepoints)
 #> 
 #> ---------------------------------------------------------------------- 
-#> Vaccine Effectiveness 
+#> Sample:
 #> ---------------------------------------------------------------------- 
-#>     estimate wald_lower wald_upper wald_n
-#> 30    0.4655     0.0899     0.6860     10
-#> 60    0.3952     0.2359     0.5212     10
-#> 90    0.3972     0.2599     0.5090     10
-#> 120   0.3395     0.2012     0.4538     10
-#> 150   0.2698     0.1387     0.3809     10
-#> 180  -0.0359    -0.1923     0.0999     10
+#> N total: 10000 
+#> Number of events: 1007 
+#> 
+#> N Exposed: 4112 
+#> N Exposed at-risk <tau> days after exposure: 4045 
+#> 
+#> Distribution of exposure times among at-risk <tau> days after exposure:
+#>  Range:  1 - 194 |  Median (IQR):  18 (11 - 32) |  Mean:  25.5
+#> 
+#> ---------------------------------------------------------------------- 
+#> Model for unexposed:
+#> ---------------------------------------------------------------------- 
+#> N = 10000 | Number of events = 664 
+#> 
+#>      coef exp(coef) se(coef)      z Pr(>|z|)
+#> x1  0.158     1.171    0.078  2.028    0.043
+#> x2 -0.056     0.945    0.019 -2.906    0.004
+#> 
+#> ---------------------------------------------------------------------- 
+#> Model for exposed:
+#> ---------------------------------------------------------------------- 
+#> N = 4045 | Number of events = 265 
+#> 
+#>                               coef exp(coef) se(coef)      z Pr(>|z|)
+#> x1                           0.169     1.184    0.124  1.365    0.172
+#> x2                          -0.089     0.915    0.031 -2.896    0.004
+#> splines::ns(D_obs, df = 4)1  0.600     1.821    0.335  1.789    0.074
+#> splines::ns(D_obs, df = 4)2  0.652     1.918    0.621  1.049    0.294
+#> splines::ns(D_obs, df = 4)3 -0.422     0.656    1.127 -0.375    0.708
+#> splines::ns(D_obs, df = 4)4 -0.906     0.404    2.117 -0.428    0.669
 #> 
 #> ======================================================================
 
@@ -169,7 +192,7 @@ fit_matching <-matching_ve(matched_data = matched_data,
                            eval_times = seq(30, 180, by = 30),
                            boot_reps = 10) 
 #> Bootstrapping 10 samples...
-#> Time difference of 0.7517531 secs
+#> Time difference of 0.80884 secs
 
 fit_matching
 #> 

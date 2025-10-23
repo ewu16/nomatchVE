@@ -53,6 +53,7 @@ outcome_status <- "event"
 exposure <- "V"
 exposure_time <- "D_obs"
 covariates <- c("x1", "x2")
+ weights_source <- "observed"
 
 eval_times <- seq(30, 180, by = 30)
 censor_time <- max(eval_times)
@@ -61,8 +62,14 @@ ci_type <- "wald"
 boot_reps <- 10
 alpha <- .05
 
+n_cores <- 1
+keep_models = TRUE
+keep_boot_samples = TRUE
+
 id_name <- "ID"
 matching_vars <- covariates
+effect <- "risk_ratio"
+
 ```
 
 ```{r}
