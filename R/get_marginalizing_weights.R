@@ -10,7 +10,7 @@
 #' Called internally by [nomatchVE()]. Provided as an example of the
 #' structure needed if a user passes in `custom_weights`.
 #'
-#' @inheritParams get_gp
+#' @inheritParams  nomatchVE
 #'
 #' @return A list with two data frames:
 #' - `g_weights`: covariate-conditional exposure time  probabilities (\eqn{g(d \mid x)})
@@ -31,7 +31,11 @@ get_observed_weights <- function(data, outcome_time, exposure,
                             exposure_time, covariates, tau){
 
     gp_list <- get_gp(data, outcome_time, exposure, exposure_time, covariates, tau)
+    gp_to_weights(gp_list)
 
+}
+
+gp_to_weights <- function(gp_list){
     #Simplify output to be similar to user-provided weights
     g <- gp_list$g_weights
     p <- gp_list$p_weights
@@ -45,8 +49,8 @@ get_observed_weights <- function(data, outcome_time, exposure,
     names(p)[names(p) == "prob_p"] <- "prob"
 
     list(
-        g_weights = g[, c(covariates, exposure_time, "prob"), drop = FALSE],
-        p_weights = p[, c(covariates, "prob"), drop = FALSE]
+        g_weights = g,
+        p_weights = p
     )
 }
 
@@ -97,7 +101,7 @@ get_gp <- function(df, outcome_time, exposure, exposure_time, covariates, tau){
 
     # Create group id and merge back into g
     group_lookup <- unique(gp_data[covariates])
-    group_lookup <- group_lookup[do.call(order, group_lookup[covariates]),]
+    group_lookup <- group_lookup[do.call(order, group_lookup[covariates]), , drop = FALSE]
     group_lookup$group_id <- seq_len(nrow(group_lookup))
     gp_data <- merge(gp_data, group_lookup, by = covariates, all.x = TRUE)
 
