@@ -49,7 +49,7 @@
 #'
 #' @seealso
 #' - [compute_psi_dx_t0()] for generating `psi_dx` input
-#' - [canonicalize_weights()] for creating `gp_list`
+#' - `canonicalize_weights()` for creating `gp_list`
 #'
 #' @export
 #'

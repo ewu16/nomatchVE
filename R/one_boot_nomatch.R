@@ -3,7 +3,7 @@
 #' @description This function computes the point estimate for
 #' a bootstrap replicate.
 #'
-#' @inheritParams estimate_nomatch_ci
+#' @inheritParams get_one_nomatch_ve
 #'
 #' @return  The `pt_estimates` component returned by [get_one_nomatch_ve()],
 #'   for a bootstrap sample.

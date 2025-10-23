@@ -53,6 +53,7 @@ compute_boot_ci <- function(x, boot_x, ci_type, alpha = .05, transform = NULL, z
 #'
 #' These define how estimates are transformed before applying
 #' the Wald CI (e.g., taking log or logit).
+#' @keywords internal
 .forward_transformations <- list(
     "logit" =  stats::qlogis,
     "log_ve" = function(y) log(1-y),
