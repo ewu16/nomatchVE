@@ -13,9 +13,10 @@ BugReports: https://github.com/ewu16/nomatchVE/issues
 Depends: 
     R (>= 2.10)
 Imports: 
+    ggh4x, 
     ggplot2,
     MASS,
-    methods,
+    rlang, 
     scales,
     stats,
     survival
