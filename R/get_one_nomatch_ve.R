@@ -67,14 +67,14 @@ get_one_nomatch_ve <- function(data,
     # --------------------------------------------------------------------------
     # 2 - Get/fit marginalizing distributions depending on weights_source type
     # --------------------------------------------------------------------------
-    if(identical(weights_source, "observed")){
+    if(is.null(custom_gp_list)){
         gp_list <- get_observed_gp(data = data,
                                    outcome_time = outcome_time,
                                    exposure = exposure,
                                    exposure_time = exposure_time,
                                    covariates = covariates,
                                    tau = tau)
-    }else if(identical(weights_source, "custom")){
+    }else{
         gp_list <- custom_gp_list
     }
 
@@ -89,6 +89,7 @@ get_one_nomatch_ve <- function(data,
     # Return items
     # --------------------------------------------------------------------------
     out <- list(pt_estimates = cbind(cuminc, "risk_ratio" = rr, "vaccine_effectiveness" = ve))
+    check_pt_estimates(out$pt_estimates)
 
     if(keep_models){
         out$model_0 <- fit_0
@@ -97,7 +98,6 @@ get_one_nomatch_ve <- function(data,
     if(return_gp_list){
         out$gp_list <- gp_list
     }
-
 
     return(out)
 
