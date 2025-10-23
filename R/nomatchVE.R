@@ -3,11 +3,12 @@
 #'
 #'@description `nomatchVE()` estimates marginal cumulative incidences under
 #'  exposure and no exposure using a G-computation approach. The method fits two
-#'  conditional hazard models- one for unexposed and one for the exposed- and uses
+#'  conditional hazard models- one for each exposure group- and uses
 #'  these models to predict time- and covariate- specific cumulative incidences.
-#'  The predicted conditional risks are then marginalized to compute overall
+#'  The predictions are then marginalized to compute overall
 #'  (marginal) cumulative incidences. The resulting cumulative incidences can be
-#'   summarized as risk ratios (RR) or 1 - RR (vaccine effectiveness).
+#'   summarized as risk ratio (RR = 1 - risk_exposed/risk_unexposed) or
+#'   vaccine effectiveness estimates (VE = 1 - RR).
 #'
 #'@param data A data frame with one row per individual containing the columns
 #'  named in `outcome_time`, `outcome_status`, `exposure`, `exposure_time`, and any
@@ -91,13 +92,13 @@
 #'   \describe{
 #'      \item{`cuminc_0`}{ marginal cumulative incidence under no exposure}
 #'      \item{`cuminc_1`}{ marginal cumulative incidence under exposure}
-#'      \item{`<effect>`}{the selected effect measure under the same name}
+#'      \item{`<effect>`}{the selected effect measure}
 #'   }
 #'      Each matrix has one row per value in `eval_times` and columns including the
 #'     point estimate (`estimate`) and, when requested, confidence limits of the form
 #'     (`{wald/percentile}_lower`, `{wald/percentile}_upper`). }
 #'   \item{weights}{List with dataframes `g_weights`, `p_weights` specifying
-#'   the marginalizing weights used for averaging over exposure eval_times and covariates.}
+#'   the marginalizing weights used for averaging over exposure times and covariates.}
 #'   \item{model_0}{Fitted hazard model for the unexposed group.
 #'   See **Modeling** section for details.}
 #'   \item{model_1}{Fitted hazard model for the exposed group.
@@ -106,7 +107,7 @@
 #'   number of successful bootstrap replications per timepoint.}
 #'   \item{boot_samples}{(If `keep_boot_samples = TRUE`) List of bootstrap draws
 #'   (stored as matrices) for each
-#'   returned quantity with names mirroring those in `estimates` (i.e. `cuminc_0`, `cuminc_1`, `<effect`).
+#'   returned quantity with names mirroring those in `estimates` (i.e. `cuminc_0`, `cuminc_1`, `<effect>`).
 #'   Rows index bootstrap replicates and columns index `eval_times`.}
 #' }
 #'
@@ -226,6 +227,12 @@ nomatchVE <- function(data,
         custom_gp_list <- NULL
      }
 
+     descrip <- get_basic_descriptives_nomatch(data,
+                                       outcome_time = outcome_time,
+                                       outcome_status = outcome_status,
+                                       exposure = exposure,
+                                       exposure_time = exposure_time,
+                                       tau = tau)
 
      # --------------------------------------------------------------------------
      # 1 - Get original estimate
@@ -267,9 +274,11 @@ nomatchVE <- function(data,
      terms_keep <- c("cuminc_0", "cuminc_1", effect)
 
      add_ci_columns <- function(term, pt_est, ci_est){
-         cbind(estimate = pt_est[, term], ci_est[[term]])
+         x <- cbind(estimate = pt_est[, term], ci_est[[term]])
+         rownames(x) <- rownames(pt_est)
+         x
      }
-     estimates <- setNames(
+     estimates <- stats::setNames(
          lapply(terms_keep, \(term) add_ci_columns(term, pt_est, ci_est)),
          terms_keep
          )
@@ -314,6 +323,7 @@ nomatchVE <- function(data,
 
          # Meta information
          call = call,
+         descrip = descrip,
          method =  "nomatchVE (G-computation)"
          )
 

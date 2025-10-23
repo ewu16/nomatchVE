@@ -41,12 +41,15 @@ matching_ve <- function(matched_data,
 
 
     # Check data/inputs
-    validate_data(
+    validate_ve_inputs(
         data = matched_data,
         outcome_time = outcome_time,
+        outcome_status = outcome_status,
         exposure = exposure,
         exposure_time = exposure_time,
-        covariates = matching_vars
+        covariates = NULL,
+        tau = tau,
+        eval_times = eval_times
     )
 
     # --------------------------------------------------------------------------
@@ -62,6 +65,11 @@ matching_ve <- function(matched_data,
 
     original <- do.call(get_one_matching_ve, estimation_args)
     pt_est <- original$pt_estimates
+    descrip <- get_basic_descriptives_matching(
+        matched_data,
+        original$matched_adata,
+        outcome_status = outcome_status,
+        exposure = exposure)
 
 
     # --------------------------------------------------------------------------
@@ -90,7 +98,7 @@ matching_ve <- function(matched_data,
     add_ci_columns <- function(term, pt_est, ci_est){
         cbind(estimate = pt_est[, term], ci_est[[term]])
     }
-    estimates <- setNames(
+    estimates <- stats::setNames(
         lapply(terms_keep, \(term) add_ci_columns(term, pt_est, ci_est)),
         terms_keep
     )
@@ -125,6 +133,7 @@ matching_ve <- function(matched_data,
 
         # Meta information
         call = call,
+        descrip = descrip,
         method =  "matching"
     )
 
