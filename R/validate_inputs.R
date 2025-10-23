@@ -11,7 +11,7 @@
 #'
 #' @keywords internal
 #' @noRd
-validate_ve_inputs <- function(data, outcome_time, outcome_status, exposure, exposure_time, covariates, eval_times, tau, censor_time) {
+validate_ve_inputs <- function(data, outcome_time, outcome_status, exposure, exposure_time, covariates, eval_times, tau) {
 
     validate_data(data, outcome_time, outcome_status, exposure, exposure_time, covariates)
 
@@ -31,15 +31,10 @@ validate_ve_inputs <- function(data, outcome_time, outcome_status, exposure, exp
     if(any(eval_times <= tau)) {
         stop("All evaluation eval_times 'eval_times' must be greater than tau (", tau, " days)")
     }
-    if(length(censor_time) != 1){
-        stop("Censoring time 'censor_time' must be a scalar value")
-    }
-    if(censor_time < max(eval_times)){
-        stop("Censoring time 'censor_time' must be greater than or equal to max(eval_times)")
-    }
+
 }
 
-validate_data <- function(data, outcome_time, outcome_status, exposure, exposure_time, covariates){
+validate_data <- function(data, outcome_time, outcome_status = NULL, exposure, exposure_time, covariates = NULL){
     # Check data is a data frame
     if(!is.data.frame(data)) {
         stop("'data' must be a data.frame, not ", class(data)[1])
@@ -59,12 +54,12 @@ validate_data <- function(data, outcome_time, outcome_status, exposure, exposure
     if(sum(is.na(data[, c(outcome_time, outcome_status, exposure)])) > 0){
         stop("Missing values in outcome, event or treatment variables are not supported. Please remove these observations and try again.")
     }
-    if(sum(is.na(data[, covariates])) > 0){
+    if(!is.null(covariates) && sum(is.na(data[, covariates])) > 0){
         stop("Missing values in adjustment variables are not supported. Please remove these observations and try again.")
     }
 
     # Check data types and coding
-    if(!all(data[[outcome_status]] %in% c(0, 1))) {
+    if(!is.null(outcome_status) && !all(data[[outcome_status]] %in% c(0, 1))) {
         stop("Event variable '", outcome_status, "' must be coded as 0/1 (0=censored, 1=event)")
     }
     if(!all(data[[exposure]] %in% c(0, 1))) {
@@ -164,6 +159,11 @@ validate_prob_column <- function(prob, name) {
 # p_weights$prob[p_weights$x2 == 5] <- NA
 # p <- p_weights
 
+
+#' Convert weights into standard format for estimation procedure
+#'
+#' @keywords internal
+#' @noRd
 canonicalize_weights <- function(weights, exposure_time, covariates) {
     g <- weights$g_weights
     p <- weights$p_weights
