@@ -54,8 +54,12 @@ estimate_bootstrap_ci <- function(one_boot_function,
 
     boot_list <- parallel::mclapply(1:boot_reps, \(i){
         set.seed(i)
+        old <- options(warn = 1); on.exit(options(old), add = TRUE)
         boot_out <- tryCatch({
-            output <- utils::capture.output(boot_est<- do.call(one_boot_function, one_boot_args))
+            output <- utils::capture.output(
+                boot_est<- do.call(one_boot_function, one_boot_args),
+                type = "message"
+            )
             list(result = boot_est,
                  output = output)
         }, error = function(e){
@@ -64,7 +68,8 @@ estimate_bootstrap_ci <- function(one_boot_function,
         })
     }, mc.cores = n_cores)
 
-    #names(boot_list) <- seq_along(boot_list)
+    #store the bootstrap index number for checking logs
+    names(boot_list) <- seq_along(boot_list)
 
     end <- Sys.time()
     print(end - start)
@@ -77,17 +82,25 @@ estimate_bootstrap_ci <- function(one_boot_function,
     errors   <- logs[bad]
 
     if(length(good) == 0){
-        stop("All bootstrap replicates encountered an error, e.g.\n",
+        stop("All bootstrap replicates encountered an error, e.g.\n ",
              paste(logs[[1]], collapse = "\n"))
+    }
+    if(length(bad) > 0){
+        warning("Some bootstrap replicates encounted an error.\n ",
+                "Please check `$n_success_boot` and `$boot_error` for more information.")
     }
 
     # Compile results
     boot_mat <- do.call(rbind, results[good])
     eval_times <- one_boot_args$eval_times
 
-    boot_samples <- setNames(
-        lapply(1:ncol(boot_mat), \(i) matrix(as.numeric(boot_mat[,i]), ncol = length(eval_times),
-                                             byrow = TRUE)),
+    boot_samples <- stats::setNames(
+        lapply(1:ncol(boot_mat), \(i){
+            m <- matrix(as.numeric(boot_mat[,i]), ncol = length(eval_times), byrow = TRUE)
+            colnames(m) <- eval_times
+            rownames(m) <- 1:nrow(m)
+            return(m)
+        }),
         colnames(boot_mat)
     )
 
@@ -95,7 +108,8 @@ estimate_bootstrap_ci <- function(one_boot_function,
     # if any estimate is missing, set corresponding estimates for all terms to missing
     is_na_mat <- Reduce("+", lapply(boot_samples, is.na)) > 0
     if(any(is_na_mat)){
-        warning("Some bootstrap replicates resulted in estimates of NA")
+        warning("Some bootstrap replicates resulted in estimates of NA.\n ",
+                "Please check `$n_success_boot` and `$boot_nas` for more information.")
     }
     n_success_boot <-colSums(!is_na_mat)
 
