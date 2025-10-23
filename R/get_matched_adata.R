@@ -48,8 +48,8 @@ clean_matched_data <- function(matched_data, outcome_time, outcome_status, expos
     new_event_name <- paste0("match_", outcome_status)
     ordered_data[[new_outcome_name]] <-ordered_data[[new_event_name]] <-  NA
 
-    cases <- subset(ordered_data, match_type == "case")
-    controls <- subset(ordered_data, match_type == "control")
+    cases <- ordered_data[ordered_data$match_type == "case",]
+    controls <-  ordered_data[ordered_data$match_type == "control",]
     stopifnot(all.equal(cases$match_id, controls$match_id))
 
     #controls who later got vaccinated
@@ -72,6 +72,7 @@ clean_matched_data <- function(matched_data, outcome_time, outcome_status, expos
     ##exclude pairs where at least one individual is no longer at risk by tau
     excluded_match_ids <- unique(tmp_data$match_id[!tmp_data$match_T > tau])
     adata <- subset(tmp_data, !tmp_data$match_id %in% excluded_match_ids)
+
     adata[order(adata$match_id),]
 
 }

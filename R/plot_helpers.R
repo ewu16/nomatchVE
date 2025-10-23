@@ -86,8 +86,10 @@ plot_ve_panel <- function(plot_data,
 
   #Main plot
   p <- ggplot2::ggplot(plot_data,
-                    ggplot2::aes(x = t0, y = estimate,
-                                 color = method, fill = method)) +
+                    ggplot2::aes(x = .data$t0,
+                                 y = .data$estimate,
+                                 color = .data$method,
+                                 fill = .data$method)) +
     ggplot2::geom_line() +
     ggplot2::facet_wrap(~term_label, scales = "free") +
     ggh4x::facetted_pos_scales(
