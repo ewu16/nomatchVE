@@ -2,10 +2,10 @@
 % Please edit documentation in R/estimate_bootstrap_ci.R
 \name{estimate_bootstrap_ci}
 \alias{estimate_bootstrap_ci}
-\title{Helper to estimate generic bootstrapped confidence interval}
+\title{Helper for constructing bootstrapped confidence intervals}
 \usage{
 estimate_bootstrap_ci(
-  one_boot_function_name,
+  one_boot_function,
   one_boot_args,
   ci_type,
   boot_reps,
@@ -16,11 +16,10 @@ estimate_bootstrap_ci(
 )
 }
 \arguments{
-\item{one_boot_function_name}{Character string naming the function that computes
-one bootstrap iteration of estimates}
+\item{one_boot_function}{Function that computes one bootstrap iteration and
+returns the bootstrap estimates}
 
-\item{one_boot_args}{List of arguments to pass to the function that computes
-one bootstrap iteration of estimations}
+\item{one_boot_args}{List of arguments to pass to \code{one_boot_function}}
 
 \item{ci_type}{Method for constructing bootstrap confidence intervals. One of
 \code{"wald"}, \code{"percentile"}, or \code{"both"}.
@@ -36,8 +35,10 @@ Recommended to use at least 1000 for publication-quality results. Use
 smaller values (e.g., 10-100) for initial exploration. Default: \code{0} (no
 bootstrapping).}
 
-\item{pt_est}{A matrix of estimates. The columns of the matrix are the cumulative
-incidence/VE terms and the rows are the requested time points for evaluation.}
+\item{pt_est}{A matrix of point estimates, with columns corresponding to
+cumulative incidence and effect measures, and rows representing evaluation
+timepoints. This argument must be provided when \code{ci_type = "wald"}. Ignored
+when \code{ci_type = "percentile"}.}
 
 \item{alpha}{Significance level for confidence intervals (Confidence level =
 100*(1-\code{alpha})\%). Default: \code{0.05}.}
@@ -53,17 +54,20 @@ Windows. Default: \code{1}.}
 \value{
 A list containing the following:
 \describe{
-\item{ci_estimates}{A list of matrices containing the lower and upper confidence interval bounds and
-bootstrap standard error for each term. When \code{ci_type = "wald"}, the bootstrapped standard errors
-on the transformed scale are also included.}
-\item{n_success_boot}{A numeric vector of the number of successful bootstrap samples for each time point.(Success bootstrap samples are
+\item{ci_estimates}{A list of matrices, one for each term, containing the
+lower and upper confidence interval bounds}
+\item{n_success_boot}{A numeric vector of the number of successful bootstrap
+samples for each time point.(Success bootstrap samples are
 those that result in non-missing valid point estimates.)}
-\item{boot_samples}{If \code{keep_boot_samples = TRUE}, a list of matrices for each term that contain the bootstrap estimates where the rows are the bootstrap iterations and
-the columns are the time points.}
+\item{boot_samples}{If \code{keep_boot_samples = TRUE}, a list of matrices, one
+for each term, containing the bootstrap estimates. Rows are the
+bootstrap iterations and columns are the time points.}
 }
+
+When \code{boot_reps = 0}, returns \code{NULL}.
 }
 \description{
-This function computes Wald and percentile bootstrapped confidence
-intervals for the proposed VE estimator.
+This function computes Wald and percentile bootstrapped
+confidence intervals.
 }
 \keyword{internal}

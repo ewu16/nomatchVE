@@ -138,7 +138,7 @@ An object of class \code{vefit} containing:
 Each matrix has one row per value in \code{eval_times} and columns including the
 point estimate (\code{estimate}) and, when requested, confidence limits of the form
 (\verb{\{wald/percentile\}_lower}, \verb{\{wald/percentile\}_upper}). }
-\item{gp_list}{List with dataframes \code{g_weights}, \code{p_weights} specifying
+\item{weights}{List with dataframes \code{g_weights}, \code{p_weights} specifying
 the marginalizing weights used for averaging over exposure eval_times and covariates.}
 \item{model_0}{Fitted hazard model for the unexposed group.
 See \strong{Modeling} section for details.}

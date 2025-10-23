@@ -103,5 +103,6 @@ the columns are the time points.}
 }
 }
 \description{
-This function is the main function for computing a matching-based estimator.
+This function is the main function for computing a matching-based estimator
+based on Kaplan Meier estimation.
 }

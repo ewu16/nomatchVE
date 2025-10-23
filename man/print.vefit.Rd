@@ -4,17 +4,17 @@
 \alias{print.vefit}
 \title{Print method for vaccine effectiveness fits}
 \usage{
-\method{print}{vefit}(object, digits = 3, ...)
+\method{print}{vefit}(x, digits = 3, ...)
 }
 \arguments{
-\item{object}{An object of class \code{vefit} created by \code{\link[=nomatchVE]{nomatchVE()}} or \code{\link[=matching_ve]{matching_ve()}}.}
+\item{x}{An x of class \code{vefit} created by \code{\link[=nomatchVE]{nomatchVE()}} or \code{\link[=matching_ve]{matching_ve()}}.}
 
 \item{digits}{Integer indicating the number of decimal places to display. Default is 3.}
 
 \item{...}{Additional arguments (currently ignored).}
 }
 \value{
-Invisibly returns the input object \code{object}. Called primarily for its side effect
+Invisibly returns the input x \code{x}. Called primarily for its side effect
 of printing a summary to the console.
 }
 \description{

@@ -14,9 +14,7 @@ get_one_nomatch_ve(
   tau,
   eval_times,
   censor_time = max(eval_times),
-  effect = c("vaccine_effectiveness", "risk_ratio"),
-  weights_source = c("observed", "custom"),
-  custom_weights = NULL,
+  custom_gp_list = NULL,
   keep_models = TRUE,
   return_gp_list = TRUE
 )
@@ -68,9 +66,12 @@ individuals are administratively censored during model fitting. Default:
 prevents extrapolation beyond the largest evaluation time.
 Typically, users should leave this at the default.}
 
-\item{effect}{Character. Type of effect measure to compute and return,
-based on the estimated cumulative incidences. Either
-\code{"vaccine_effectiveness"} (default) or \code{"risk_ratio"}.}
+\item{keep_models}{Logical; return the two fitted hazard models used to compute
+cumulative incidences?
+Default: \code{TRUE}.}
+
+\item{return_gp_list}{Logical; return marginalizing weights? Default is
+TRUE.}
 
 \item{weights_source}{Character string specifying how to construct marginalizing weights.
 One of:
@@ -79,39 +80,6 @@ One of:
 \item \code{"custom"}: use user-specified weights provided via \code{custom_weights} argument;
 }}
 
-\item{custom_weights}{a \code{list(g_weights, p_weights)} providing weights for
-marginalizing the time- and covariate-specific cumulative incidences. Must
-have the following format:
-\itemize{
-\item \code{g_weights}: data frame with columns
-\itemize{
-\item all variables in \code{covariates}
-\item \code{exposure_time} (time of exposure),
-\item \code{prob} (probability of exposure at the given time within the covariate-group;
-should sum to 1 within each covariate-group)
-}
-\item \code{p_weights}: data frame with columns
-\itemize{
-\item all variables in \code{covariates}
-\item \code{prob} (probability of covariate-group; should sum to 1 over all covariate groups.)
-}
-}}
-
-\item{keep_models}{Logical; return the two fitted hazard models used to compute
-cumulative incidences?
-Default: \code{TRUE}.}
-
-\item{return_gp_list}{Logical; return marginalizing weights? Default is
-TRUE.}
-
-\item{formula_0}{Either a formula or a pre-fit \code{coxph} model object for the
-unvaccinated hazard (original time scale). If a fitted model is provided,
-it will be used directly instead of fitting a new model. Intended for advanced use.}
-
-\item{formula_1}{Either a formula or a pre-fit  \code{coxph} model object for the
-vaccinated hazard (time-since-exposure scale). If a fitted model is provided,
-it will be used directly instead of fitting a new model. Intended for advanced use.}
-
 \item{return_matching}{Logical; return matched datasets? Default is
 TRUE if \code{weights_source = "matched"}. When \code{weights_source != "matched"}, this is
 automatically set to \code{FALSE}.}
@@ -119,11 +87,10 @@ automatically set to \code{FALSE}.}
 \value{
 List with components:
 \describe{
-\item{estimates}{List of matrices: \code{cuminc_0}, \code{cuminc_1}, \code{risk_ratio}, \code{vaccine_effectiveness}
-where each matrix has one row per timepoint}
+\item{pt_estimates}{Matrix of point estimates with one row per evaluation time and
+one column per measure (\code{cuminc_0}, \code{cuminc_1}, \code{risk_ratio},\code{vaccine_effectiveness}).}
 \item{model_0, model_1}{Fitted Cox models (if \code{keep_models = TRUE})}
 \item{gp_list}{Marginalizing distributions (if \code{return_gp_list = TRUE})}
-\item{matched_data, matched_adata}{Matched datasets (if \code{weights_source = "matched"})}
 }
 }
 \description{

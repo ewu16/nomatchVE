@@ -14,6 +14,10 @@ get_observed_weights(
 )
 }
 \arguments{
+\item{data}{A data frame with one row per individual containing the columns
+named in \code{outcome_time}, \code{outcome_status}, \code{exposure}, \code{exposure_time}, and any
+variables listed in \code{covariates}.}
+
 \item{outcome_time}{Name of the time-to-event/censoring variable. Time should
 be measured from a given time origin (e.g. study start, enrollment, or age)
 for all individuals.}
@@ -30,7 +34,14 @@ origin; use \code{NA} if not exposed. Time must be measured in the same units
 the hazard models. These covariates should include all known confounders of
 exposure and censoring measured at the chosen time origin.}
 
-\item{tau}{Numeric. Only vaccinated who are at-risk tau days after vaccination are included.}
+\item{tau}{Non-negative numeric value specifying the time after exposure that
+should be excluded from the risk evaluation period. This argument is
+primarily intended for vaccination exposures, where it is common to exclude
+the time after vaccination when immunity is still building. Time must be
+measured in the same units as that used for \code{outcome_time} and \code{exposure_time}
+and should reflect the biological understanding of when vaccine-induced
+immunity develops (usually 1-2 weeks). For non-vaccine exposures, \code{tau} can
+be set to 0 (no delay period).}
 }
 \value{
 A list with two data frames:

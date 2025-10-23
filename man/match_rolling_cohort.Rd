@@ -54,13 +54,14 @@ A list containing the following:
 }
 }
 \description{
-Creates 1:1 matched pairs of vaccinated ("cases") and unvaccinated ("controls")
-individuals. Uses a rolling cohort design where controls must be unvaccinated and event-free at the time they are
-matched to a case.
+Creates 1:1 matched pairs of vaccinated ("cases") and
+unvaccinated ("controls") individuals. Uses a rolling cohort design where
+controls must be unvaccinated and event-free at the time they are matched to
+a case.
 }
 \details{
-For each vaccination time, newly vaccinated individuals are matched to
-eligible controls using exact covariate matching. Controls are eligible if
+For each vaccination time, newly vaccinated individuals are matched
+to eligible controls using exact covariate matching. Controls are eligible if
 unvaccinated and event-free at that time. Vaccinated individuals may appear
 as a control (when they are not yet vaccinated) and as a case.
 }

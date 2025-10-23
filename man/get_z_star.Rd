@@ -17,7 +17,7 @@ get_z_star(mat, alpha, seed = NULL)
 List containing:
 \describe{
 \item{z_star}{Critical value (scalar)}
-\item{excluded_timepoints}{Timepoints excluded due to >5\% missing bootstrap estimates, or \code{NULL}}
+\item{excluded_timepoints}{Timepoints excluded due to >5\% missing bootstrap estimates}
 }
 }
 \description{

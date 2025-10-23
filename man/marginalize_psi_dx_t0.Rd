@@ -59,6 +59,6 @@ average.
 \seealso{
 \itemize{
 \item \code{\link[=compute_psi_dx_t0]{compute_psi_dx_t0()}} for generating \code{psi_dx} input
-\item \code{\link[=canonicalize_weights]{canonicalize_weights()}} for creating \code{gp_list}
+\item \code{canonicalize_weights()} for creating \code{gp_list}
 }
 }

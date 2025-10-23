@@ -36,7 +36,7 @@ fit_0 <- fit_model_0(
   outcome_status = "event",
   exposure = "V",
   exposure_time = "D_obs",
-  covariates = covariates
+  covariates = c("x1", "x2")
  )
 
 # Fit hazard model under vaccine
@@ -46,7 +46,8 @@ fit_1 <- fit_model_1(
   outcome_status = "event",
   exposure = "V",
   exposure_time = "D_obs",
-  tau = tau
+  covariates = c("x1", "x2"),
+  tau = 14
  )
 
 
@@ -55,7 +56,7 @@ fit_1 <- fit_model_1(
 newdata <- simdata[simdata$V == 1 & (simdata$Y - simdata$D_obs) > 14,]
 
 # Predict from hazard model under no vaccine
-predict_from_model_0(
+pred_0 <- predict_from_model_0(
     fit_0,
     exposure_time = "D_obs",
     t0 = 90,
@@ -64,7 +65,7 @@ predict_from_model_0(
 )
 
 # Predict from hazard model under vaccine
-predict_from_model_1(
+pred_1 <- predict_from_model_1(
   fit_1,
   exposure_time = "D_obs",
   t0 = 90,

@@ -12,11 +12,8 @@ get_one_matching_ve(
   exposure_time,
   tau,
   eval_times,
-  method = "km",
-  censor_time = NULL,
-  adjust = NULL,
-  separate = TRUE,
-  keep_models = TRUE
+  keep_models = TRUE,
+  keep_adata = TRUE
 )
 }
 \arguments{
@@ -59,11 +56,10 @@ cumulative incidences?
 Default: \code{TRUE}.}
 }
 \value{
-The object returned by \code{\link[=compute_marginal_ve]{compute_marginal_ve()}}
+The object returned by \code{\link[=compute_km_ve]{compute_km_ve()}}
 }
 \description{
 First, creates the analysis matched data set based on \code{matched_data}.
-Then calls \code{\link[=compute_marginal_ve]{compute_marginal_ve()}} on the analysis data set, specifying
-the appropriate outcome and treatment arguments.
+Then computes Kaplan Meier estimates of cumulative incidence  on the analysis data set.
 }
 \keyword{internal}
