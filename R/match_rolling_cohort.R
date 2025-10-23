@@ -1,13 +1,12 @@
 #' Match vaccinated and unvaccinated individuals using rolling cohort design
 #'
-#' @description
-#' Creates 1:1 matched pairs of vaccinated ("cases") and unvaccinated ("controls")
-#' individuals. Uses a rolling cohort design where controls must be unvaccinated and event-free at the time they are
-#' matched to a case.
+#' @description Creates 1:1 matched pairs of vaccinated ("cases") and
+#' unvaccinated ("controls") individuals. Uses a rolling cohort design where
+#' controls must be unvaccinated and event-free at the time they are matched to
+#' a case.
 #'
-#' @details
-#' For each vaccination time, newly vaccinated individuals are matched to
-#' eligible controls using exact covariate matching. Controls are eligible if
+#' @details For each vaccination time, newly vaccinated individuals are matched
+#' to eligible controls using exact covariate matching. Controls are eligible if
 #' unvaccinated and event-free at that time. Vaccinated individuals may appear
 #' as a control (when they are not yet vaccinated) and as a case.
 #'
@@ -48,7 +47,13 @@
 match_rolling_cohort <- function(data, outcome_time, exposure, exposure_time, matching_vars, id_name, replace = FALSE, seed = NULL){
 
     # Check data/inputs
-    #validate_data(data, outcome_time, exposure, exposure_time, matching_vars)
+    validate_data(
+        data = data,
+        outcome_time = outcome_time,
+        exposure = exposure,
+        exposure_time = exposure_time,
+        covariates = matching_vars
+        )
 
     if(any(duplicated(data[[id_name]]))){
         stop("<id_name> is not a unique identifier for data")
@@ -56,16 +61,9 @@ match_rolling_cohort <- function(data, outcome_time, exposure, exposure_time, ma
 
     # Check for name conflicts for variables that will be added
     reserved_vars <- c("match_index_time", "match_type", paste0("match_", exposure), "match_id")
-    conflicts <- intersect(reserved_vars, names(data))
 
-    if(length(conflicts) > 0) {
-        stop(
-            "Data contains reserved variable names: ",
-            paste(conflicts, collapse = ", "), "\n",
-            "Please rename these variables before matching.",
-            call. = FALSE
-        )
-    }
+    check_reserved_vars(names(data), reserved_vars, "Names in data")
+
 
     #set seed for reproducibility due to random matching
     if(!is.null(seed)){
@@ -146,7 +144,7 @@ match_rolling_cohort <- function(data, outcome_time, exposure, exposure_time, ma
     matched_final <- matched[order(matched$match_id),]
     rownames(matched_final) <- NULL
 
-    unmatched_cases <- setdiff(cases[[id_name]], subset(matched_final, match_type == "case")[[id_name]])
+    unmatched_cases <- setdiff(cases[[id_name]], matched_final[matched_final$match_type == "case",][[id_name]])
     discarded <- !(data[[id_name]] %in% matched_final[[id_name]])
 
     list(matched_data = matched_final,
