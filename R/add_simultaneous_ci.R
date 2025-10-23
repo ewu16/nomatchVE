@@ -53,6 +53,7 @@
 
 add_simultaneous_ci <- function(object, seed = NULL){
 
+  # Validate inputs
   if (!is.vefit(object)) {
     stop("Object must be a vefit object", call. = FALSE)
   }
@@ -69,15 +70,17 @@ add_simultaneous_ci <- function(object, seed = NULL){
   }
 
 
+  #Extract key info from fitted object
   alpha <- object$alpha
   estimates <- object$estimates
   boot_samples <- object$boot_samples
 
 
+  #Transform bootstrap estimates
   transformed_boot_samples <- lapply(names(boot_samples), \(term){
        tr_name <- .term_transform_map[term]
        tf <- .forward_transformations[[tr_name]]
-       tf(boot_samples[[i]])
+       tf(boot_samples[[term]])
   })
 
   names(transformed_boot_samples) <- names(boot_samples)
@@ -128,7 +131,7 @@ add_simultaneous_ci <- function(object, seed = NULL){
 #' @return List containing:
 #'   \describe{
 #'     \item{z_star}{Critical value (scalar)}
-#'     \item{excluded_timepoints}{Timepoints excluded due to >5% missing bootstrap estimates, or `NULL`}
+#'     \item{excluded_timepoints}{Timepoints excluded due to >5% missing bootstrap estimates}
 #'   }
 #'
 #' @keywords internal
@@ -139,7 +142,7 @@ get_z_star <- function(mat, alpha, seed = NULL){
     set.seed(seed)
   }
 
-  #set infinite values to missing
+  #set infinite values to missing (otherwise cannot compute covariance matrix)
   mat_clean <- mat
   mat_clean[is.infinite(mat)] <- NA
 
@@ -153,12 +156,9 @@ get_z_star <- function(mat, alpha, seed = NULL){
     times_removed <- NULL
   }
 
-
   clean_inds <- setdiff(seq_len(ncol(mat_clean)), bad_inds)
   mat_sub <- mat_clean[,  clean_inds]
   covariance_sub <- stats::cov(mat_sub, use = "complete.obs")
-
-
 
   sds <- sqrt(diag(covariance_sub))
   estimate_draws <- MASS::mvrnorm(n = 10000,
