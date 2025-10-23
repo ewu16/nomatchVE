@@ -67,7 +67,7 @@ compute_psi_dx_t0 <- function(fit_0, fit_1, exposure_time, t0, tau, newdata){
 #'   outcome_status = "event",
 #'   exposure = "V",
 #'   exposure_time = "D_obs",
-#'   covariates = covariates
+#'   covariates = c("x1", "x2")
 #'  )
 #'
 #' # Fit hazard model under vaccine
@@ -77,7 +77,8 @@ compute_psi_dx_t0 <- function(fit_0, fit_1, exposure_time, t0, tau, newdata){
 #'   outcome_status = "event",
 #'   exposure = "V",
 #'   exposure_time = "D_obs",
-#'   tau = tau
+#'   covariates = c("x1", "x2"),
+#'   tau = 14
 #'  )
 #'
 #'
@@ -86,7 +87,7 @@ compute_psi_dx_t0 <- function(fit_0, fit_1, exposure_time, t0, tau, newdata){
 #' newdata <- simdata[simdata$V == 1 & (simdata$Y - simdata$D_obs) > 14,]
 #'
 #' # Predict from hazard model under no vaccine
-#' predict_from_model_0(
+#' pred_0 <- predict_from_model_0(
 #'     fit_0,
 #'     exposure_time = "D_obs",
 #'     t0 = 90,
@@ -95,7 +96,7 @@ compute_psi_dx_t0 <- function(fit_0, fit_1, exposure_time, t0, tau, newdata){
 #' )
 #'
 #' # Predict from hazard model under vaccine
-#' predict_from_model_1(
+#' pred_1 <- predict_from_model_1(
 #'   fit_1,
 #'   exposure_time = "D_obs",
 #'   t0 = 90,
@@ -104,7 +105,7 @@ compute_psi_dx_t0 <- function(fit_0, fit_1, exposure_time, t0, tau, newdata){
 #' )
 
 predict_from_model_0 <- function(fit_0, exposure_time, t0, tau, newdata){
-    surv_vars <- all.vars(formula(fit_0)[[2]])
+    surv_vars <- all.vars(stats::formula(fit_0)[[2]])
     time_var <- surv_vars[1]
     event_var <- surv_vars[2]
 
@@ -127,9 +128,10 @@ predict_from_model_0 <- function(fit_0, exposure_time, t0, tau, newdata){
 }
 
 #' @rdname predict_from_model_0
-#'
+#' @keywords internal
+#' @export
 predict_from_model_1 <- function(fit_1, exposure_time, t0, tau, newdata){
-    surv_vars <- all.vars(formula(fit_1)[[2]])
+    surv_vars <- all.vars(stats::formula(fit_1)[[2]])
     time_var <- surv_vars[1]
     event_var <- surv_vars[2]
 
@@ -142,8 +144,12 @@ predict_from_model_1 <- function(fit_1, exposure_time, t0, tau, newdata){
     newdata_t0[[time_var]]   <- t0
     newdata_t0[[event_var]]  <- 0
 
-    #This should always be 1 but sometimes returns NaN so just hard code
+    #This should always be 1 but in rare cases is NaN
     surv_1_tau <- stats::predict(fit_1, newdata_tau, type = "survival")
+    if(any(is.nan(surv_1_tau))){
+        warning("Predicted survival probabilities at time tau included NaN values.
+        Replacing with 1 (expected value)")
+    }
     if(any(surv_1_tau[is.finite(surv_1_tau)] != 1)){
         stop("Survival at tau not 1")
     }
